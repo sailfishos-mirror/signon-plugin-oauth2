@@ -1,0 +1,8 @@
+files
+*.log
+*.substvars
+signon-oauth2plugin-dbg/
+signon-oauth2plugin-dev/
+signon-oauth2plugin-tests/
+signon-oauth2plugin/
+tmp/

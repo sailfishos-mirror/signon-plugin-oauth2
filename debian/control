@@ -1,0 +1,38 @@
+Source: signon-oauth2
+Section: devel
+Priority: optional
+Maintainer: Alberto Mardegan <alberto.mardegan@nokia.com>
+Build-Depends: debhelper (>= 5), doxygen, libqt4-dev (>= 4.5), aegis-builder, signon-plugins-dev (>= 8.9), libsignon-qt-dev
+Standards-Version: 3.7.2
+
+Package: signon-oauth2plugin
+Architecture: any
+Priority: optional
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: signon-oauth2plugin0
+Description: OAuth2 authentication plugin for Single Sign On (SSO)
+ OAuth2 authentication plugin for Single Sign On (SSO)
+
+Package: signon-oauth2plugin-dev
+Architecture: any
+Section: libdevel
+Priority: extra
+Depends: signon-oauth2plugin (= ${binary:Version}), signon-plugins-dev
+Description: Development files for OAuth2 authentication plugin in Single Sign On (SSO)
+ Development files for OAuth2 authentication plugin in Single Sign On (SSO)
+
+Package: signon-oauth2plugin-dbg
+Architecture: any
+Priority: extra
+Depends: signon-oauth2plugin (= ${binary:Version})
+Description: Debug symbols for signon-oauth2plugin
+ Debug version of the signon-oauth2plugin.
+
+Package: signon-oauth2plugin-tests
+Architecture: any
+Priority: extra
+Depends: ci-testing, signon-oauth2plugin
+XB-Maemo-CI-Packages: signon-oauth2plugin
+XB-Maemo-CI-Stage: fast, staging, acceptance, validation
+Description: CI tests for SSO oauth2 plugin
+ CI tests for SSO oauth2 plugin
