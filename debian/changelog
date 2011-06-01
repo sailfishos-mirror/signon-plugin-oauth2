@@ -1,3 +1,9 @@
+signon-oauth2 (0.6-1) unstable; urgency=low
+
+  * Use redirect_uri as FinalUrl.
+
+ -- Alberto Mardegan <alberto.mardegan@nokia.com>  Wed, 01 Jun 2011 12:15:26 +0300
+
 signon-oauth2 (0.1) unstable; urgency=low
 
   * Initial branch
