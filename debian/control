@@ -36,3 +36,11 @@ XB-Maemo-CI-Packages: signon-oauth2plugin
 XB-Maemo-CI-Stage: fast, staging, acceptance, validation
 Description: CI tests for SSO oauth2 plugin
  CI tests for SSO oauth2 plugin
+
+Package: signon-oauth2plugin-example
+Architecture: any
+Priority: extra
+Depends: ${shlibs:Depends}, ${misc:Depends}, signon-oauth2plugin
+Description: Example application for libsignon-qt and OAuth plugin
+ A simple application using libsignon-qt and the Oauth 2.0 plugin to
+ authenticate with facebook.
