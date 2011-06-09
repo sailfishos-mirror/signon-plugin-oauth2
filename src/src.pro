@@ -17,9 +17,8 @@ private_headers = oauth2plugin.h oauth2tokendata.h
 HEADERS = $$public_headers \
     $$private_headers
 SOURCES += oauth2plugin.cpp
-QMAKE_CXXFLAGS += -fno-exceptions \
-    -fno-rtti
-PKGCONFIG += libsignon-qt
+PKGCONFIG += libsignon-qt \
+    QJson
 headers.files = $$public_headers
 include( ../common-installs-config.pri )
 target.path = $${INSTALL_PREFIX}/lib/signon

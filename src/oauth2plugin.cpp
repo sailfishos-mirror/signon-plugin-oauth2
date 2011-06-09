@@ -27,6 +27,8 @@
 #include <QDateTime>
 #include <QCryptographicHash>
 
+#include <qjson/parser.h>
+
 #include "oauth2plugin.h"
 #include "oauth2tokendata.h"
 
@@ -72,9 +74,8 @@ namespace OAuth2PluginNS {
 
     const QString EQUAL = QString("=");
     const QString AMPERSAND = QString("&");
-    const QString EQUAL_WITH_QUOTE = QString("=\"");
-    const QString QUOTE = QString("\"");
-    const QString QUOTE_WITH_DELIMIT = QString("\",");
+    const QString EQUAL_WITH_QUOTES = QString("%1=\"%2\"");
+    const QString DELIMITER = QString(", ");
     const QString SPACE = QString(" ");
     const QString OAUTH = QString("OAuth");
     const QString OAUTH_REALM = QString("realm");
@@ -421,34 +422,41 @@ namespace OAuth2PluginNS {
     QString OAuth2Plugin::createOAuth1Header(const QString &aUrl,
                                              OAuth1PluginData inData)
     {
+        QString authHeader = OAUTH + SPACE;
+        if (!inData.Realm().isEmpty()) {
+            authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_REALM)
+                              .arg(urlEncode(inData.Realm())));
+            authHeader.append(DELIMITER);
+        }
+        if (!inData.Callback().isEmpty()) {
+            authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_CALLBACK)
+                              .arg(urlEncode(inData.Callback())));
+            authHeader.append(DELIMITER);
+        }
+        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_CONSUMERKEY)
+                          .arg(urlEncode(inData.ConsumerKey())));
+        authHeader.append(DELIMITER);
         // Nonce
         unsigned long nonce1 = (unsigned long) random();
         unsigned long nonce2 = (unsigned long) random();
         QString oauthNonce = QString("%1%2").arg(nonce1).arg(nonce2);
-
+        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_NONCE)
+                          .arg(urlEncode(oauthNonce)));
+        authHeader.append(DELIMITER);
         // Timestamp
         QString oauthTimestamp = QString("%1").arg(QDateTime::currentDateTime().toTime_t());
-
-        QString authHeader = OAUTH + SPACE;
-        if (!inData.Realm().isEmpty()) {
-            authHeader.append(OAUTH_REALM + EQUAL_WITH_QUOTE
-                              + urlEncode(inData.Realm()) + QUOTE_WITH_DELIMIT);
-        }
-        if (!inData.Callback().isEmpty()) {
-            authHeader.append(OAUTH_CALLBACK + EQUAL_WITH_QUOTE
-                              + urlEncode(inData.Callback()) + QUOTE_WITH_DELIMIT);
-        }
-        authHeader.append(OAUTH_CONSUMERKEY + EQUAL_WITH_QUOTE
-                          + urlEncode(inData.ConsumerKey()) + QUOTE_WITH_DELIMIT);
-        authHeader.append(OAUTH_NONCE + EQUAL_WITH_QUOTE
-                          + urlEncode(oauthNonce) + QUOTE_WITH_DELIMIT );
-        authHeader.append(OAUTH_TIMESTAMP + EQUAL_WITH_QUOTE
-                          + urlEncode(oauthTimestamp) + QUOTE_WITH_DELIMIT);
+        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_TIMESTAMP)
+                          .arg(urlEncode(oauthTimestamp)));
+        authHeader.append(DELIMITER);
         if (!d->m_oauth1Token.isEmpty()) {
-            authHeader.append(OAUTH_TOKEN + EQUAL_WITH_QUOTE
-                              + urlEncode(d->m_oauth1Token) + QUOTE_WITH_DELIMIT);
+            authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_TOKEN)
+                              .arg(urlEncode(d->m_oauth1Token)));
+            authHeader.append(DELIMITER);
         }
 
+        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_SIGNATURE_METHOD)
+                          .arg(urlEncode(d->m_mechanism)));
+        authHeader.append(DELIMITER);
         // Creating the signature
         // PLAINTEXT signature method
         QByteArray secretKey;
@@ -456,8 +464,9 @@ namespace OAuth2PluginNS {
                          urlEncode(d->m_oauth1TokenSecret));
         if (d->m_mechanism == PLAINTEXT) {
             TRACE() << "Signature = " << secretKey;
-            authHeader.append(OAUTH_SIGNATURE + EQUAL_WITH_QUOTE
-                              + urlEncode(secretKey) + QUOTE_WITH_DELIMIT);
+            authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_SIGNATURE)
+                              .arg(urlEncode(secretKey)));
+            authHeader.append(DELIMITER);
         }
         // HMAC-SHA1 signature method
         else if (d->m_mechanism == HMAC_SHA1) {
@@ -466,22 +475,22 @@ namespace OAuth2PluginNS {
             TRACE() << "Signature Base = " << signatureBase;
             QByteArray signature = hashHMACSHA1(secretKey, signatureBase);
             TRACE() << "Signature = " << signature;
-            authHeader.append(OAUTH_SIGNATURE + EQUAL_WITH_QUOTE
-                              + urlEncode(signature.toBase64()) + QUOTE_WITH_DELIMIT);
+            authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_SIGNATURE)
+                              .arg(urlEncode(signature.toBase64())));
+            authHeader.append(DELIMITER);
         }
         // TODO: RSA-SHA1 signature method should be implemented
         else {
             Q_ASSERT_X(false, __FUNCTION__, "Unsupported mechanism");
         }
 
-        authHeader.append(OAUTH_SIGNATURE_METHOD + EQUAL_WITH_QUOTE
-                          + urlEncode(d->m_mechanism) + QUOTE_WITH_DELIMIT );
         if (!d->m_oauth1TokenVerifier.isEmpty()) {
-            authHeader.append(OAUTH_VERIFIER + EQUAL_WITH_QUOTE
-                              + urlEncode(d->m_oauth1TokenVerifier) + QUOTE_WITH_DELIMIT);
+            authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_VERIFIER)
+                              .arg(urlEncode(d->m_oauth1TokenVerifier)));
+            authHeader.append(DELIMITER);
         }
-        authHeader.append( OAUTH_VERSION + EQUAL_WITH_QUOTE
-                           + urlEncode(OAUTH_VERSION_1) + QUOTE);
+        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_VERSION)
+                          .arg(urlEncode(OAUTH_VERSION_1)));
 
         return authHeader;
     }
@@ -614,9 +623,10 @@ namespace OAuth2PluginNS {
     }
 
     // Method to handle responses for OAuth 2.0 requests
-    void OAuth2Plugin::replyOAuth2RequestFinished(QNetworkReply *reply)
+    void OAuth2Plugin::replyOAuth2RequestFinished()
     {
         TRACE()<< "Finished signal received";
+        QNetworkReply *reply = (QNetworkReply*)sender();
         QByteArray replyContent = reply->readAll();
         TRACE() << replyContent;
         if (reply->error() != QNetworkReply::NoError) {
@@ -638,9 +648,10 @@ namespace OAuth2PluginNS {
             // Handling application/json content type
             if (reply->rawHeader(CONTENT_TYPE).startsWith(CONTENT_APP_JSON)) {
                 TRACE()<< "application/json content received";
-                QByteArray accessToken = parseJSONReply(replyContent, QByteArray("\"access_token\""));
-                QByteArray expiresIn = parseJSONReply(replyContent, QByteArray("\"expires_in\""));
-                QByteArray refreshToken = parseJSONReply(replyContent, QByteArray("\"refresh_token\""));
+                QVariantMap map = parseJSONReply(replyContent);
+                QByteArray accessToken = map["access_token"].toByteArray();
+                QVariant expiresIn = map["expires_in"];
+                QByteArray refreshToken = map["refresh_token"].toByteArray();
 
                 if (accessToken.isEmpty()) {
                     TRACE()<< "Access token is empty";
@@ -656,10 +667,11 @@ namespace OAuth2PluginNS {
             }
             // Added to test with facebook Graph API's (handling text/plain content type)
             else if (reply->rawHeader(CONTENT_TYPE).startsWith(CONTENT_TEXT_PLAIN)){
-                TRACE()<< "text/plain; charset=UTF-8 content received";
-                QByteArray accessToken = parseTextReply(replyContent, QByteArray("access_token"));
-                QByteArray expiresIn = parseTextReply(replyContent, QByteArray("expires"));
-                QByteArray refreshToken = parseTextReply(replyContent, QByteArray("refresh_token"));
+                TRACE()<< "text/plain content received";
+                QMap<QString,QString> map = parseTextReply(replyContent);
+                QByteArray accessToken = map["access_token"].toAscii();
+                QByteArray expiresIn = map["expires"].toAscii();
+                QByteArray refreshToken = map["refresh_token"].toAscii();
 
                 if (accessToken.isEmpty()) {
                     TRACE()<< "Access token is empty";
@@ -686,9 +698,10 @@ namespace OAuth2PluginNS {
     }
 
     // Method to handle responses for OAuth 1.0a Request token request
-    void OAuth2Plugin::replyOAuth1RequestFinished(QNetworkReply *reply)
+    void OAuth2Plugin::replyOAuth1RequestFinished()
     {
         TRACE()<< "Finished signal received";
+        QNetworkReply *reply = (QNetworkReply*)sender();
         QByteArray replyContent = reply->readAll();
         TRACE() << replyContent;
         if (reply->error() != QNetworkReply::NoError) {
@@ -713,10 +726,11 @@ namespace OAuth2PluginNS {
             if ((reply->rawHeader(CONTENT_TYPE).startsWith(CONTENT_APP_URLENCODED))
                 || (reply->rawHeader(CONTENT_TYPE).startsWith(CONTENT_TEXT_PLAIN))) {
 
+                QMap<QString,QString> map = parseTextReply(replyContent);
                 if (d->m_oauth1RequestType == OAUTH1_POST_REQUEST_TOKEN) {
                     // Extracting the request token, token secret
-                    d->m_oauth1Token = parseTextReply(replyContent, OAUTH_TOKEN.toAscii());
-                    d->m_oauth1TokenSecret = parseTextReply(replyContent, OAUTH_TOKEN_SECRET.toAscii());
+                    d->m_oauth1Token = map[OAUTH_TOKEN].toAscii();
+                    d->m_oauth1TokenSecret = map[OAUTH_TOKEN_SECRET].toAscii();
                     if (d->m_oauth1Token.isEmpty() || d->m_oauth1TokenSecret.isEmpty()) {
                         TRACE() << "OAuth token is empty";
                         emit error(Error(Error::Unknown, QString("Request token missing")));
@@ -727,7 +741,7 @@ namespace OAuth2PluginNS {
                 }
                 else if (d->m_oauth1RequestType == OAUTH1_POST_ACCESS_TOKEN) {
                     // Extracting the access token
-                    d->m_oauth1Token = parseTextReply(replyContent, OAUTH_TOKEN.toAscii());
+                    d->m_oauth1Token = map[OAUTH_TOKEN].toAscii();
                     if (d->m_oauth1Token.isEmpty()) {
                         TRACE()<< "OAuth token is empty";
                         emit error(Error(Error::Unknown, QString("Access token missing")));
@@ -774,7 +788,8 @@ namespace OAuth2PluginNS {
             d->m_reply->deleteLater();
             d->m_reply = 0;
         }
-        QByteArray errorString = parseTextReply(reply, OAUTH_PROBLEM.toAscii());
+        QMap<QString,QString> map = parseTextReply(reply);
+        QByteArray errorString = map[OAUTH_PROBLEM].toAscii();
         if (!errorString.isEmpty()) {
             handleOAuth1ProblemError(errorString);
             return;
@@ -791,7 +806,8 @@ namespace OAuth2PluginNS {
             d->m_reply->deleteLater();
             d->m_reply = 0;
         }
-        QByteArray errorString = parseJSONReply(reply, QByteArray("\"error\""));
+        QVariantMap map = parseJSONReply(reply);
+        QByteArray errorString = map["error"].toByteArray();
         if (!errorString.isEmpty()) {
             Error::ErrorType type = Error::Unknown;
             if (errorString == QByteArray("incorrect_client_credentials")) {
@@ -830,7 +846,7 @@ namespace OAuth2PluginNS {
         }
 
         // Added to work with facebook Graph API's
-        errorString = parseJSONReply(reply, QByteArray("\"message\""));
+        errorString = map["message"].toByteArray();
         if (!errorString.isEmpty()) {
             TRACE() << "Error Emitted";
             emit error(Error(Error::OperationFailed, errorString));
@@ -899,12 +915,11 @@ namespace OAuth2PluginNS {
                  .arg(d->m_oauth2Data.TokenPath()));
         QNetworkRequest request(url);
         request.setRawHeader(CONTENT_TYPE, CONTENT_APP_URLENCODED);
-        connect(d->m_manager, SIGNAL(finished(QNetworkReply*)),
-                this, SLOT(replyOAuth2RequestFinished(QNetworkReply*)));
 
         TRACE() << "Query string = " << postData;
         d->m_reply = d->m_manager->post(request, postData);
-
+        connect(d->m_reply, SIGNAL(finished()),
+                this, SLOT(replyOAuth2RequestFinished()));
         connect(d->m_reply, SIGNAL(error(QNetworkReply::NetworkError)),
                 this, SLOT(handleNetworkError(QNetworkReply::NetworkError)));
         connect(d->m_reply, SIGNAL(sslErrors(QList<QSslError>)),
@@ -927,8 +942,6 @@ namespace OAuth2PluginNS {
             request.setUrl(d->m_oauth1Data.RequestEndpoint());
             authHeader = createOAuth1Header(d->m_oauth1Data.RequestEndpoint(),
                                             d->m_oauth1Data);
-            connect(d->m_manager, SIGNAL(finished(QNetworkReply*)),
-                    this, SLOT(replyOAuth1RequestFinished(QNetworkReply*)));
         }
         else if (d->m_oauth1RequestType == OAUTH1_POST_ACCESS_TOKEN) {
             request.setUrl(d->m_oauth1Data.TokenEndpoint());
@@ -941,38 +954,38 @@ namespace OAuth2PluginNS {
         request.setRawHeader(QByteArray("Authorization"), authHeader.toAscii());
 
         d->m_reply = d->m_manager->post(request, QByteArray());
-
+        connect(d->m_reply, SIGNAL(finished()),
+                this, SLOT(replyOAuth1RequestFinished()));
         connect(d->m_reply, SIGNAL(error(QNetworkReply::NetworkError)),
                 this, SLOT(handleNetworkError(QNetworkReply::NetworkError)));
         connect(d->m_reply, SIGNAL(sslErrors(QList<QSslError>)),
                 this, SLOT(handleSslErrors(QList<QSslError>)));
     }
 
-    /* This method is supposed to deal with JSON */
-    const QByteArray OAuth2Plugin::parseJSONReply(const QByteArray &reply,
-                                                  const QByteArray &find)
+    const QVariantMap OAuth2Plugin::parseJSONReply(const QByteArray &reply)
     {
         TRACE();
-        QList<QByteArray> list = reply.split('\n');
-        for (int i = 0; i<list.count(); i++) {
-            if (list.at(i).simplified().startsWith(find))
-                return list.at(i).mid((list.at(i).indexOf(":")+2),
-                                      (list.at(i).size() - 1 - (list.at(i).indexOf(":")+2)));
+        QJson::Parser parser;
+        bool ok;
+        QVariant tree = parser.parse(reply, &ok);
+        if (ok) {
+            return tree.toMap();
         }
-        return QByteArray();
+        return QVariantMap();
     }
 
-    const QByteArray OAuth2Plugin::parseTextReply(const QByteArray &reply,
-                                                  const QByteArray &find)
+    const QMap<QString, QString> OAuth2Plugin::parseTextReply(const QByteArray &reply)
     {
         TRACE();
-        QList<QByteArray> list = reply.split('&');
-        for (int i = 0; i<list.count(); i++) {
-            if (list.at(i).startsWith(find)) {
-                return list.at(i).mid(list.at(i).indexOf("=") + 1);
+        QMap<QString, QString> map;
+        QList<QByteArray> items = reply.split('&');
+        foreach (QByteArray item, items) {
+            int idx = item.indexOf("=");
+            if (idx > -1) {
+                map.insert(item.left(idx), item.mid(idx + 1));
             }
         }
-        return QByteArray();
+        return map;
     }
 
     SIGNON_DECL_AUTH_PLUGIN(OAuth2Plugin)
