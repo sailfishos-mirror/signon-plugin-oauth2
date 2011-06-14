@@ -1,3 +1,9 @@
+signon-oauth2 (0.7-1) unstable; urgency=low
+
+  * Fixes: NB#263049 - signon-oauth2plugin does not provides to get the get/set the oauth_tokensecret
+
+ -- Abhijit Bera <abhijit.bera@nokia.com>  Tue, 14 Jun 2011 18:25:04 +0530
+
 signon-oauth2 (0.6-1) unstable; urgency=low
 
   * Use redirect_uri as FinalUrl.
