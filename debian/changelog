@@ -1,3 +1,9 @@
+signon-oauth2 (0.7-2) unstable; urgency=low
+
+  * Fixing dependency
+
+ -- Smita Srivastava <smita.srivastava@teleca.com>  Wed, 15 Jun 2011 11:49:20 +0300
+
 signon-oauth2 (0.7-1) unstable; urgency=low
 
   * Fixes: NB#263049 - signon-oauth2plugin does not provides to get the get/set the oauth_tokensecret
