@@ -1,3 +1,9 @@
+signon-oauth2 (0.8-1) unstable; urgency=low
+
+  * Fixing issue while storing oauth_token_secret
+
+ -- Abhijit Bera <abhijit.bera@nokia.com>  Sat, 25 Jun 2011 14:14:35 +0530
+
 signon-oauth2 (0.7-2) unstable; urgency=low
 
   * Fixing dependency
