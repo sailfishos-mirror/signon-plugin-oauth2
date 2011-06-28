@@ -1,3 +1,9 @@
+signon-oauth2 (0.8-2) unstable; urgency=low
+
+  * Retagging because I messed up!
+
+ -- Abhijit Bera <abhijit.bera@nokia.com>  Tue, 28 Jun 2011 06:50:23 +0530
+
 signon-oauth2 (0.8-1) unstable; urgency=low
 
   * Fixing issue while storing oauth_token_secret
