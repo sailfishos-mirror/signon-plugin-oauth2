@@ -1,3 +1,9 @@
+signon-oauth2 (0.8-3) unstable; urgency=low
+
+  * Fixes: NB#263049 - signon-oauth2plugin does not provides to get the get/set the oauth_tokensecret
+
+ -- Subramanian Girish <ext-girish.1.subramanian@nokia.com>  Tue, 28 Jun 2011 12:01:37 +0300
+
 signon-oauth2 (0.8-2) unstable; urgency=low
 
   * Retagging because I messed up!
