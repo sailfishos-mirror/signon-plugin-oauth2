@@ -1,4 +1,11 @@
-signon-oauth2 (0.8-3) unstable; urgency=low
+signon-oauth2 (0.9-1) unstable; urgency=low
+
+  * OAuth1.0a fixes for Twitter
+  * Fixes: NB#284722 - Account name isn't updated if user corrects (login) username in web-page
+
+ -- Vivek Sekar <vivek.sekar@nokia.com>  Wed, 28 Sep 2011 12:01:38 +0300
+
+ signon-oauth2 (0.8-3) unstable; urgency=low
 
   * Fixes: NB#263049 - signon-oauth2plugin does not provides to get the get/set the oauth_tokensecret
 
