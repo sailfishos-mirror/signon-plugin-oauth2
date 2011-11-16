@@ -1,3 +1,9 @@
+signon-oauth2 (0.10-1) unstable; urgency=low
+
+  * Addresses: NB#289484 - Facebook - oauth2 problem when authenticating
+
+ -- Smita Srivastava <smita.srivastava@teleca.com>  Wed, 16 Nov 2011 13:15:29 +0200
+
 signon-oauth2 (0.9-1) unstable; urgency=low
 
   * OAuth1.0a fixes for Twitter
