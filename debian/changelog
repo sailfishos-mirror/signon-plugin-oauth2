@@ -7,7 +7,7 @@ signon-oauth2 (0.10-1) unstable; urgency=low
 signon-oauth2 (0.9-1) unstable; urgency=low
 
   * OAuth1.0a fixes for Twitter
-  * Fixes: NB#284722 - Account name isn't updated if user corrects (login) username in web-page
+  * Addresses: NB#284722 - Account name isn't updated if user corrects (login) username in web-page
 
  -- Vivek Sekar <vivek.sekar@nokia.com>  Wed, 28 Sep 2011 12:01:38 +0300
 
