@@ -1,4 +1,4 @@
-signon-oauth2 (0.11-1) unstable; urgency=low
+signon-oauth2 (0.11.2) unstable; urgency=low
 
   * Fixes: NB#293240 - Signon web browser should respond more quickly to loading FinalUrl.
 
