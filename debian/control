@@ -2,7 +2,7 @@ Source: signon-oauth2
 Section: devel
 Priority: optional
 Maintainer: Alberto Mardegan <alberto.mardegan@nokia.com>
-Build-Depends: debhelper (>= 5), doxygen, libqt4-dev (>= 4.5), aegis-builder, signon-plugins-dev (>= 8.31), libsignon-qt-dev, libqjson-dev
+Build-Depends: debhelper (>= 5), doxygen, libqt4-dev (>= 4.5), aegis-builder, signon-plugins-dev (>= 9.15), libsignon-qt-dev, libqjson-dev
 Standards-Version: 3.7.2
 
 Package: signon-oauth2plugin
