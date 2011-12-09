@@ -1,3 +1,9 @@
+signon-oauth2 (0.11-1) unstable; urgency=low
+
+  * Fixes: NB#293240 - Signon web browser should respond more quickly to loading FinalUrl.
+
+ -- Aurel Popirtac <ext-aurel.popirtac@nokia.com>  Fri, 09 Dec 2011 16:06:08 +0200
+
 signon-oauth2 (0.10-1) unstable; urgency=low
 
   * Addresses: NB#289484 - Facebook - oauth2 problem when authenticating
