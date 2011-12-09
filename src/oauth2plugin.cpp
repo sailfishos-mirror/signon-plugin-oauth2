@@ -198,8 +198,10 @@ namespace OAuth2PluginNS {
         TRACE() << "Url = " << url.toString();
         SignOn::UiSessionData uiSession;
         uiSession.setOpenUrl(url.toString());
-        if (!d->m_oauth2Data.RedirectUri().isEmpty())
+        if (!d->m_oauth2Data.RedirectUri().isEmpty()) {
             uiSession.setFinalUrl(d->m_oauth2Data.RedirectUri());
+            uiSession.setDisplayFinalUrl(d->m_oauth1Data.DisplayCallback());
+        }
         emit userActionRequired(uiSession);
     }
 
@@ -215,8 +217,10 @@ namespace OAuth2PluginNS {
         TRACE() << "URL = " << url.toString();
         SignOn::UiSessionData uiSession;
         uiSession.setOpenUrl(url.toString());
-        if (d->m_oauth1Data.Callback() != "oob")
+        if (d->m_oauth1Data.Callback() != "oob") {
             uiSession.setFinalUrl(d->m_oauth1Data.Callback());
+            uiSession.setDisplayFinalUrl(d->m_oauth1Data.DisplayCallback());
+        }
         if (!captchaUrl.isEmpty()) {
             uiSession.setCaptchaUrl(captchaUrl);
         }
