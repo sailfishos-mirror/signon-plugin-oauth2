@@ -60,6 +60,7 @@ namespace OAuth2PluginNS {
          * redirection URI
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, RedirectUri);
+        SIGNON_SESSION_DECLARE_PROPERTY(bool, DisplayCallback);
 
         /*!
          * access scope

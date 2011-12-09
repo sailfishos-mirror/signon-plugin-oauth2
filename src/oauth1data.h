@@ -55,6 +55,7 @@ namespace OAuth2PluginNS {
          * redirection URI
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, Callback);
+        SIGNON_SESSION_DECLARE_PROPERTY(bool, DisplayCallback);
         SIGNON_SESSION_DECLARE_PROPERTY(QString, Realm);
 
 	/* Optional username */
