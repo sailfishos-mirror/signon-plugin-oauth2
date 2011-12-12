@@ -181,8 +181,10 @@ namespace OAuth2PluginNS {
     void OAuth2Plugin::cancel()
     {
         TRACE();
-        if (d->m_reply)
+        if (d->m_reply) {
             d->m_reply->abort();
+        }
+        AuthPluginInterface::cancel();
     }
 
     void OAuth2Plugin::sendOAuth2AuthRequest()
@@ -547,6 +549,12 @@ namespace OAuth2PluginNS {
                 emit error(Error(Error::UserInteraction,
                                  QString("userActionFinished error: ")
                                  + QString::number(data.QueryErrorCode())));
+
+            // UI has been closed, clear private data
+            delete d;
+            d = NULL;
+            d = new Private(this);
+
             return;
         }
 
