@@ -243,8 +243,7 @@ namespace OAuth2PluginNS {
                     && (input.TokenPath().isEmpty()))) {
                 return false;
             }
-        }
-        else {
+        } else {
             OAuth1PluginData input = inData.data<OAuth1PluginData>();
             if (input.AuthorizationEndpoint().isEmpty()
                 || input.ConsumerKey().isEmpty()
@@ -327,21 +326,20 @@ namespace OAuth2PluginNS {
                     emit result(response);
                     return;
                 }
-            }
-            else if (token.contains(TOKEN) && token.contains(SECRET)) {
+            } else if (token.contains(TOKEN) && token.contains(SECRET)) {
                 if (mechanism == HMAC_SHA1 || mechanism == RSA_SHA1 || mechanism == PLAINTEXT) {
                     OAuth1PluginTokenData response;
                     response.setAccessToken(token.value(TOKEN).toByteArray());
                     response.setTokenSecret(token.value(SECRET).toByteArray());
 
-            if (token.contains(USER_ID)) {
-                //qDebug() << "Found user_id:" << token.value(USER_ID).toByteArray();
-                response.setUserId(token.value(USER_ID).toByteArray());
-            }
-            if (token.contains(SCREEN_NAME)) {
-                //qDebug() << "Found screen_name:" << token.value(SCREEN_NAME).toByteArray();
-                response.setScreenName(token.value(SCREEN_NAME).toByteArray());
-            }
+                    if (token.contains(USER_ID)) {
+                        //qDebug() << "Found user_id:" << token.value(USER_ID).toByteArray();
+                        response.setUserId(token.value(USER_ID).toByteArray());
+                    }
+                    if (token.contains(SCREEN_NAME)) {
+                        //qDebug() << "Found screen_name:" << token.value(SCREEN_NAME).toByteArray();
+                        response.setScreenName(token.value(SCREEN_NAME).toByteArray());
+                    }
 
                     emit result(response);
                     return;
@@ -352,17 +350,15 @@ namespace OAuth2PluginNS {
         if (mechanism == WEB_SERVER || mechanism == USER_AGENT) {
             d->m_oauth2Data = inData.data<OAuth2PluginData>();
             sendOAuth2AuthRequest();
-        }
-        else if (mechanism == HMAC_SHA1 ||mechanism == PLAINTEXT) {
+        } else if (mechanism == HMAC_SHA1 ||mechanism == PLAINTEXT) {
             d->m_oauth1Data = inData.data<OAuth1PluginData>();
             d->m_oauth1RequestType = OAUTH1_POST_REQUEST_TOKEN;
-        if (!d->m_oauth1Data.UserName().isEmpty()) {
-            d->m_oauth1ScreenName = d->m_oauth1Data.UserName().toAscii(); // UTF8?
-            //qDebug() << "Found username:" << d->m_oauth1ScreenName;
-        }
+            if (!d->m_oauth1Data.UserName().isEmpty()) {
+                d->m_oauth1ScreenName = d->m_oauth1Data.UserName().toAscii(); // UTF8?
+                //qDebug() << "Found username:" << d->m_oauth1ScreenName;
+            }
             sendOAuth1PostRequest();
-        }
-        else {
+        } else {
             emit error(Error(Error::MechanismNotAvailable));
         }
     }
@@ -583,11 +579,9 @@ namespace OAuth2PluginNS {
                 for (int i = 1; i < list.count(); i += 2) {
                     if (list.at(i - 1) == ACCESS_TOKEN) {
                         respData.setAccessToken(list.at(i));
-                    }
-                    else if (list.at(i - 1) == EXPIRES_IN) {
+                    } else if (list.at(i - 1) == EXPIRES_IN) {
                         respData.setExpiresIn(QString(list.at(i)).toInt());
-                    }
-                    else if (list.at(i - 1) == REFRESH_TOKEN) {
+                    } else if (list.at(i - 1) == REFRESH_TOKEN) {
                         respData.setRefreshToken(list.at(i));
                     }
                 }
@@ -607,8 +601,7 @@ namespace OAuth2PluginNS {
 
                     emit result(respData);
                 }
-            }
-            else {
+            } else {
                 emit error(Error(Error::Unknown, QString("Access token not present")));
             }
         } else if (d->m_mechanism == WEB_SERVER) {
@@ -626,8 +619,8 @@ namespace OAuth2PluginNS {
                 newUrl.addQueryItem(AUTH_CODE, code);
                 newUrl.addQueryItem(REDIRECT_URI, d->m_oauth2Data.RedirectUri());
                 sendOAuth2PostRequest(newUrl.encodedQuery());
-            }
-            else if (url.hasQueryItem(USERNAME) && url.hasQueryItem(PASSWORD)) {
+
+            } else if (url.hasQueryItem(USERNAME) && url.hasQueryItem(PASSWORD)) {
                 QString username = url.queryItemValue(USERNAME);
                 QString password = url.queryItemValue(PASSWORD);
                 newUrl.addQueryItem(GRANT_TYPE, USER_BASIC);
@@ -636,8 +629,8 @@ namespace OAuth2PluginNS {
                 newUrl.addQueryItem(USERNAME, username);
                 newUrl.addQueryItem(PASSWORD, password);
                 sendOAuth2PostRequest(newUrl.encodedQuery());
-            }
-            else if (url.hasQueryItem(ASSERTION_TYPE) && url.hasQueryItem(ASSERTION)) {
+
+            } else if (url.hasQueryItem(ASSERTION_TYPE) && url.hasQueryItem(ASSERTION)) {
                 QString assertion_type = url.queryItemValue(ASSERTION_TYPE);
                 QString assertion = url.queryItemValue(ASSERTION);
                 newUrl.addQueryItem(GRANT_TYPE, ASSERTION);
@@ -646,30 +639,27 @@ namespace OAuth2PluginNS {
                 newUrl.addQueryItem(ASSERTION_TYPE, assertion_type);
                 newUrl.addQueryItem(ASSERTION, assertion);
                 sendOAuth2PostRequest(newUrl.encodedQuery());
-            }
-            else if (url.hasQueryItem(REFRESH_TOKEN)) {
+
+            } else if (url.hasQueryItem(REFRESH_TOKEN)) {
                 QString refresh_token = url.queryItemValue(REFRESH_TOKEN);
                 newUrl.addQueryItem(GRANT_TYPE, REFRESH_TOKEN);
                 newUrl.addQueryItem(CLIENT_ID, d->m_oauth2Data.ClientId());
                 newUrl.addQueryItem(CLIENT_SECRET, d->m_oauth2Data.ClientSecret());
                 newUrl.addQueryItem(REFRESH_TOKEN, refresh_token);
                 sendOAuth2PostRequest(newUrl.encodedQuery());
-            }
-            else {
+            } else {
                 emit error(Error(Error::Unknown, QString("Access grant not present")));
             }
-        }
-        else { // For all OAuth 1 mechanisms
+        } else { // For all OAuth 1 mechanisms
             if (url.hasQueryItem(OAUTH_VERIFIER)) {
                 d->m_oauth1TokenVerifier = url.queryItemValue(OAUTH_VERIFIER);
                 d->m_oauth1Data.setCallback(QString());
                 d->m_oauth1RequestType = OAUTH1_POST_ACCESS_TOKEN;
                 sendOAuth1PostRequest();
-            }
-            else if (url.hasQueryItem(OAUTH_PROBLEM)) {
+
+            } else if (url.hasQueryItem(OAUTH_PROBLEM)) {
                 handleOAuth1ProblemError(url.queryItemValue(OAUTH_PROBLEM).toAscii());
-            }
-            else {
+            } else {
                 emit error(Error(Error::Unknown, QString("oauth_verifier missing")));
             }
         }
@@ -697,7 +687,6 @@ namespace OAuth2PluginNS {
 
         // Handling 200 OK response (HTTP_STATUS_OK) WITH content
         if (reply->hasRawHeader(CONTENT_TYPE)) {
-
             // Handling application/json content type
             if (reply->rawHeader(CONTENT_TYPE).startsWith(CONTENT_APP_JSON)) {
                 TRACE()<< "application/json content received";
@@ -709,8 +698,7 @@ namespace OAuth2PluginNS {
                 if (accessToken.isEmpty()) {
                     TRACE()<< "Access token is empty";
                     emit error(Error(Error::Unknown));
-                }
-                else {
+                } else {
                     OAuth2PluginTokenData response;
                     response.setAccessToken(accessToken);
                     response.setRefreshToken(refreshToken);
@@ -729,16 +717,14 @@ namespace OAuth2PluginNS {
                 if (accessToken.isEmpty()) {
                     TRACE()<< "Access token is empty";
                     emit error(Error(Error::Unknown));
-                }
-                else {
+                } else {
                     OAuth2PluginTokenData response;
                     response.setAccessToken(accessToken);
                     response.setRefreshToken(refreshToken);
                     response.setExpiresIn(expiresIn.toInt());
                     emit result(response);
                 }
-            }
-            else {
+            } else {
                 TRACE()<< "Unsupported content type received: " << reply->rawHeader(CONTENT_TYPE);
                 emit error(Error(Error::OperationFailed, QString("Unsupported content type received")));
             }
@@ -774,7 +760,6 @@ namespace OAuth2PluginNS {
 
         // Handling 200 OK response (HTTP_STATUS_OK) WITH content
         if (reply->hasRawHeader(CONTENT_TYPE)) {
-
             // Checking if supported content type received
             if ((reply->rawHeader(CONTENT_TYPE).startsWith(CONTENT_APP_URLENCODED))
                 || (reply->rawHeader(CONTENT_TYPE).startsWith(CONTENT_TEXT_HTML))
@@ -788,20 +773,17 @@ namespace OAuth2PluginNS {
                     if (d->m_oauth1Token.isEmpty() || d->m_oauth1TokenSecret.isEmpty()) {
                         TRACE() << "OAuth request token  or secret is empty";
                         emit error(Error(Error::Unknown, QString("Request token or secret missing")));
-                    }
-                    else {
+                    } else {
                         sendOAuth1AuthRequest();
                     }
-                }
-                else if (d->m_oauth1RequestType == OAUTH1_POST_ACCESS_TOKEN) {
+                } else if (d->m_oauth1RequestType == OAUTH1_POST_ACCESS_TOKEN) {
                     // Extracting the access token
                     d->m_oauth1Token = map[OAUTH_TOKEN].toAscii();
                     d->m_oauth1TokenSecret = map[OAUTH_TOKEN_SECRET].toAscii();
                     if (d->m_oauth1Token.isEmpty() || d->m_oauth1TokenSecret.isEmpty()) {
                         TRACE()<< "OAuth access token or secret is empty";
                         emit error(Error(Error::Unknown, QString("Access token or secret missing")));
-                    }
-                    else {
+                    } else {
                         OAuth1PluginTokenData response;
                         response.setAccessToken(d->m_oauth1Token);
                         response.setTokenSecret(d->m_oauth1TokenSecret);
@@ -831,12 +813,10 @@ namespace OAuth2PluginNS {
 
                         emit result(response);
                     }
-                }
-                else {
+                } else {
                     Q_ASSERT_X(false, __FUNCTION__, "Invalid OAuth1 POST request");
                 }
-            }
-            else {
+            } else {
                 TRACE()<< "Unsupported content type received: " << reply->rawHeader(CONTENT_TYPE);
                 emit error(Error(Error::OperationFailed,
                                  QString("Unsupported content type received")));
@@ -892,32 +872,23 @@ namespace OAuth2PluginNS {
             Error::ErrorType type = Error::Unknown;
             if (errorString == QByteArray("incorrect_client_credentials")) {
                 type = Error::InvalidCredentials;
-            }
-            else if (errorString == QByteArray("redirect_uri_mismatch")) {
+            } else if (errorString == QByteArray("redirect_uri_mismatch")) {
                 type = Error::InvalidCredentials;
-            }
-            else if (errorString == QByteArray("bad_authorization_code")) {
+            } else if (errorString == QByteArray("bad_authorization_code")) {
                 type = Error::InvalidCredentials;
-            }
-            else if (errorString == QByteArray("invalid_client_credentials")) {
+            } else if (errorString == QByteArray("invalid_client_credentials")) {
                 type = Error::InvalidCredentials;
-            }
-            else if (errorString == QByteArray("unauthorized_client")) {
+            } else if (errorString == QByteArray("unauthorized_client")) {
                 type = Error::NotAuthorized;
-            }
-            else if (errorString == QByteArray("invalid_assertion")) {
+            } else if (errorString == QByteArray("invalid_assertion")) {
                 type = Error::InvalidCredentials;
-            }
-            else if (errorString == QByteArray("unknown_format")) {
+            } else if (errorString == QByteArray("unknown_format")) {
                 type = Error::InvalidQuery;
-            }
-            else if (errorString == QByteArray("authorization_expired")) {
+            } else if (errorString == QByteArray("authorization_expired")) {
                 type = Error::InvalidCredentials;
-            }
-            else if (errorString == QByteArray("multiple_credentials")) {
+            } else if (errorString == QByteArray("multiple_credentials")) {
                 type = Error::InvalidQuery;
-            }
-            else if (errorString == QByteArray("invalid_user_credentials")) {
+            } else if (errorString == QByteArray("invalid_user_credentials")) {
                 type = Error::InvalidCredentials;
             }
             TRACE() << "Error Emitted";
@@ -1022,13 +993,12 @@ namespace OAuth2PluginNS {
             request.setUrl(d->m_oauth1Data.RequestEndpoint());
             authHeader = createOAuth1Header(d->m_oauth1Data.RequestEndpoint(),
                                             d->m_oauth1Data);
-        }
-        else if (d->m_oauth1RequestType == OAUTH1_POST_ACCESS_TOKEN) {
+
+        } else if (d->m_oauth1RequestType == OAUTH1_POST_ACCESS_TOKEN) {
             request.setUrl(d->m_oauth1Data.TokenEndpoint());
             authHeader = createOAuth1Header(d->m_oauth1Data.TokenEndpoint(),
                                             d->m_oauth1Data);
-        }
-        else {
+        } else {
             Q_ASSERT_X(false, __FUNCTION__, "Invalid OAuth1 POST request");
         }
         request.setRawHeader(QByteArray("Authorization"), authHeader.toAscii());
