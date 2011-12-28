@@ -141,8 +141,8 @@ namespace OAuth2PluginNS {
         OAuth1PluginData m_oauth1Data;
         QByteArray m_oauth1Token;
         QByteArray m_oauth1TokenSecret;
-        QByteArray m_oauth1UserId;
-        QByteArray m_oauth1ScreenName;
+        QString m_oauth1UserId;
+        QString m_oauth1ScreenName;
         QString m_oauth1TokenVerifier;
         OAuth1RequestType m_oauth1RequestType;
         QVariantMap m_tokens;
@@ -354,7 +354,7 @@ namespace OAuth2PluginNS {
             d->m_oauth1Data = inData.data<OAuth1PluginData>();
             d->m_oauth1RequestType = OAUTH1_POST_REQUEST_TOKEN;
             if (!d->m_oauth1Data.UserName().isEmpty()) {
-                d->m_oauth1ScreenName = d->m_oauth1Data.UserName().toAscii(); // UTF8?
+                d->m_oauth1ScreenName = d->m_oauth1Data.UserName();
                 //qDebug() << "Found username:" << d->m_oauth1ScreenName;
             }
             sendOAuth1PostRequest();
@@ -658,7 +658,7 @@ namespace OAuth2PluginNS {
                 sendOAuth1PostRequest();
 
             } else if (url.hasQueryItem(OAUTH_PROBLEM)) {
-                handleOAuth1ProblemError(url.queryItemValue(OAUTH_PROBLEM).toAscii());
+                handleOAuth1ProblemError(url.queryItemValue(OAUTH_PROBLEM));
             } else {
                 emit error(Error(Error::Unknown, QString("oauth_verifier missing")));
             }
@@ -796,13 +796,13 @@ namespace OAuth2PluginNS {
                         // Store also (possible) user_id & screen_name
                         if (map.contains(USER_ID)) {
                             //qDebug() << "Found user_id:" << map[USER_ID].toAscii();
-                            d->m_oauth1UserId = map[USER_ID].toAscii();
+                            d->m_oauth1UserId = map[USER_ID];
                             response.setUserId(d->m_oauth1UserId);
                             token.insert(USER_ID, d->m_oauth1UserId);
                         }
                         if (map.contains(SCREEN_NAME)) {
-                            //qDebug() << "Found screen_name:" << map[SCREEN_NAME].toAscii();
-                            d->m_oauth1ScreenName = map[SCREEN_NAME].toAscii();
+                            //qDebug() << "Found screen_name:" << map[SCREEN_NAME];
+                            d->m_oauth1ScreenName = map[SCREEN_NAME];
                             response.setScreenName(d->m_oauth1ScreenName);
                             token.insert(SCREEN_NAME, d->m_oauth1ScreenName);
                         }
@@ -830,7 +830,7 @@ namespace OAuth2PluginNS {
         d->m_oauth1RequestType = OAUTH1_POST_REQUEST_INVALID;
     }
 
-    void OAuth2Plugin::handleOAuth1ProblemError(const QByteArray &errorString)
+    void OAuth2Plugin::handleOAuth1ProblemError(const QString &errorString)
     {
         TRACE();
         Error::ErrorType type = Error::Unknown;
@@ -849,7 +849,7 @@ namespace OAuth2PluginNS {
             d->m_reply = 0;
         }
         QMap<QString,QString> map = parseTextReply(reply);
-        QByteArray errorString = map[OAUTH_PROBLEM].toAscii();
+        QString errorString = map[OAUTH_PROBLEM];
         if (!errorString.isEmpty()) {
             handleOAuth1ProblemError(errorString);
             return;
