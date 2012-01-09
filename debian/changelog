@@ -1,3 +1,10 @@
+signon-oauth2 (0.13.1) unstable; urgency=low
+
+  * UNRELEASED
+  * Fixes: NB#96068 - 'Unknown Error.Try later' error shown always on tapping 'Cancel, and return app' link from Authorize web browser.
+
+ -- Aurel Popirtac <ext-aurel.popirtac@nokia.com>  Mon, 09 Jan 2012 14:15:06 +0200
+
 signon-oauth2 (0.12.1) unstable; urgency=low
 
   * Fixes: NB#294077 - Clicking on Cancel from Twitter OAuth login screen causes "Unknown error".
