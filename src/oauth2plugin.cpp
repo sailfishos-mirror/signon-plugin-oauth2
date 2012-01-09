@@ -132,6 +132,26 @@ namespace OAuth2PluginNS {
                 m_manager->deleteLater();
         }
 
+        void setupNetworkProxy(const SignOn::SessionData &inData)
+        {
+            QString proxy = inData.NetworkProxy();
+            //set proxy from params
+            if (!proxy.isEmpty()) {
+                QUrl proxyUrl(proxy);
+                if (!proxyUrl.host().isEmpty()) {
+                    m_networkProxy = QNetworkProxy(
+                            QNetworkProxy::HttpProxy,
+                            proxyUrl.host(),
+                            proxyUrl.port(),
+                            proxyUrl.userName(),
+                            proxyUrl.password());
+                    TRACE() << proxyUrl.host() << ":" <<  proxyUrl.port();
+                }
+            } else {
+                m_networkProxy = QNetworkProxy::applicationProxy();
+            }
+        }
+
         OAuth2Plugin *m_parent;
         QNetworkAccessManager *m_manager;
         QNetworkProxy m_networkProxy;
@@ -274,31 +294,28 @@ namespace OAuth2PluginNS {
             return;
         }
 
-        QString proxy = inData.NetworkProxy();
-        //set proxy from params
-        if (!proxy.isEmpty()) {
-            QUrl proxyUrl(proxy);
-            if (!proxyUrl.host().isEmpty()) {
-                d->m_networkProxy = QNetworkProxy(
-                        QNetworkProxy::HttpProxy,
-                        proxyUrl.host(),
-                        proxyUrl.port(),
-                        proxyUrl.userName(),
-                        proxyUrl.password());
-                TRACE() << proxyUrl.host() << ":" <<  proxyUrl.port();
-            }
-        } else {
-            d->m_networkProxy = QNetworkProxy::applicationProxy();
-        }
-
         d->m_mechanism = mechanism;
+        bool renewToken = false;
         if (mechanism == WEB_SERVER || mechanism == USER_AGENT) {
             OAuth2PluginData data = inData.data<OAuth2PluginData>();
             d->m_key = data.ClientId();
+            renewToken = data.RenewToken();
         } else {
             OAuth1PluginData data = inData.data<OAuth1PluginData>();
             d->m_key = data.ConsumerKey();
+            renewToken = data.RenewToken();
         }
+
+        if (renewToken) {
+            d->m_tokens.remove(d->m_key);
+            OAuth2TokenData tokens;
+            tokens.setTokens(d->m_tokens);
+            emit store(tokens);
+            clearData();
+        }
+
+        d->setupNetworkProxy(inData);
+
         //get stored data
         OAuth2TokenData tokens = inData.data<OAuth2TokenData>();
         d->m_tokens = tokens.Tokens();
