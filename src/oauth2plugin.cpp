@@ -78,6 +78,7 @@ namespace OAuth2PluginNS {
     const QString REFRESH_TOKEN = QString("refresh_token");
     const QString AUTH_ERROR = QString("error");
     const QString USER_DENIED = QString("user_denied");
+    const QString DENIED  = QString("denied");
 
     const QString EQUAL = QString("=");
     const QString AMPERSAND = QString("&");
@@ -551,10 +552,7 @@ namespace OAuth2PluginNS {
                                  + QString::number(data.QueryErrorCode())));
 
             // UI has been closed, clear private data
-            delete d;
-            d = NULL;
-            d = new Private(this);
-
+            clearData();
             return;
         }
 
@@ -562,6 +560,13 @@ namespace OAuth2PluginNS {
 
         // Checking if authorization server granted access
         QUrl url = QUrl(data.UrlResponse());
+        if( url.hasQueryItem(DENIED) ) {
+            // used chose "Cancel" in the web browser
+            emit error(Error(Error::SessionCanceled, QLatin1String("Cancelled by user")));
+            clearData();
+            return;
+        }
+
         if (url.hasQueryItem(AUTH_ERROR)) {
             TRACE() << "Server denied access permission";
             emit error(Error(Error::PermissionDenied, url.queryItemValue(AUTH_ERROR)));
@@ -1061,6 +1066,13 @@ namespace OAuth2PluginNS {
             }
         }
         return map;
+    }
+
+    void OAuth2Plugin::clearData()
+    {
+        delete d;
+        d = NULL;
+        d = new Private(this);
     }
 
     SIGNON_DECL_AUTH_PLUGIN(OAuth2Plugin)
