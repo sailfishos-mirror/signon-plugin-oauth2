@@ -1,10 +1,8 @@
 signon-oauth2 (0.14.1) unstable; urgency=low
 
-  * UNRELEASED
-  * Fixes: NB#96068 - 'Unknown Error.Try later' error shown always on tapping 'Cancel, and return app' link from Authorize web browser.
-  * Fixes: NB#293829 - Revoking access to the Twitter client on twitter.com should cause the Twitter account on DUT to be invalid and all data to be remove + crashed.
+  * Addresses: NB#293829 - Revoking access to the Twitter client on twitter.com should cause the Twitter account on DUT to be invalid and all data to be remove + crashed.
 
- -- Aurel Popirtac <ext-aurel.popirtac@nokia.com>  Mon, 09 Jan 2012 14:15:06 +0200
+ -- Aurel Popirtac <ext-aurel.popirtac@nokia.com>  Thu, 12 Jan 2012 12:00:06 +0200
 
 signon-oauth2 (0.12.1) unstable; urgency=low
 
