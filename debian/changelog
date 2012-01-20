@@ -1,3 +1,10 @@
+signon-oauth2 (0.15.1) unstable; urgency=low
+
+  * UNRELEASED
+  * Addresses: NB#296108 - Spinner is keeping spinning infinitely after tapping on Signin button in Twitter accounts screen. 
+
+ -- Aurel Popirtac <ext-aurel.popirtac@nokia.com>  Fri, 20 Jan 2012 13:19:33 +0200
+
 signon-oauth2 (0.14.1) unstable; urgency=low
 
   * UNRELEASED
