@@ -1053,9 +1053,11 @@ namespace OAuth2PluginNS {
 
     void OAuth2Plugin::clearData()
     {
+        bool isProcessing = d->m_isProcessing;
         delete d;
         d = NULL;
-        d = new Private(this, true);
+        //keep the current processing state
+        d = new Private(this, isProcessing);
     }
 
     void OAuth2Plugin::replyError(const Error &err)
