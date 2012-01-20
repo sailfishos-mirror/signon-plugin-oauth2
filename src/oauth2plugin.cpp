@@ -112,7 +112,7 @@ namespace OAuth2PluginNS {
     class OAuth2Plugin::Private
     {
     public:
-        Private(OAuth2Plugin* parent) : m_parent(parent),
+        Private(OAuth2Plugin* parent, bool isProcessing = false) : m_parent(parent),
             m_manager(0), m_reply(0)
         {
             TRACE();
@@ -121,6 +121,7 @@ namespace OAuth2PluginNS {
             m_oauth1TokenSecret.clear();
             m_oauth1TokenVerifier.clear();
             m_oauth1RequestType = OAUTH1_POST_REQUEST_INVALID;
+            m_isProcessing = isProcessing;
         }
 
         ~Private()
@@ -167,6 +168,7 @@ namespace OAuth2PluginNS {
         OAuth1RequestType m_oauth1RequestType;
         QVariantMap m_tokens;
         QString m_key;
+        bool m_isProcessing;
     }; //Private
 
     OAuth2Plugin::OAuth2Plugin(QObject *parent)
@@ -205,6 +207,9 @@ namespace OAuth2PluginNS {
         if (d->m_reply) {
             d->m_reply->abort();
         }
+        clearData();
+        replyError(Error(Error::SessionCanceled));
+
         AuthPluginInterface::cancel();
     }
 
@@ -281,16 +286,17 @@ namespace OAuth2PluginNS {
                                const QString &mechanism)
     {
         TRACE();
+        d->m_isProcessing = true;
         OAuth2PluginData input;
 
         if ((!mechanism.isEmpty()) && (!mechanisms().contains(mechanism))) {
-            emit error(Error(Error::MechanismNotAvailable));
+            replyError(Error(Error::MechanismNotAvailable));
             return;
         }
 
         if (!validateInput(inData, mechanism)) {
             TRACE() << "Invalid parameters passed";
-            emit error(Error(Error::InvalidQuery));
+            replyError(Error(Error::InvalidQuery));
             return;
         }
 
@@ -306,7 +312,10 @@ namespace OAuth2PluginNS {
             renewToken = data.RenewToken();
         }
 
-        if (renewToken) {
+        //get stored data
+        OAuth2TokenData tokenData = inData.data<OAuth2TokenData>();
+        d->m_tokens = tokenData.Tokens();
+        if (renewToken || (inData.UiPolicy() == RequestPasswordPolicy)) {
             d->m_tokens.remove(d->m_key);
             OAuth2TokenData tokens;
             tokens.setTokens(d->m_tokens);
@@ -315,19 +324,6 @@ namespace OAuth2PluginNS {
         }
 
         d->setupNetworkProxy(inData);
-
-        //get stored data
-        OAuth2TokenData tokens = inData.data<OAuth2TokenData>();
-        d->m_tokens = tokens.Tokens();
-        if (inData.UiPolicy() == RequestPasswordPolicy) {
-            //remove old token for given Key
-            TRACE() << d->m_tokens;
-            d->m_tokens.remove(d->m_key);
-            OAuth2TokenData tokens;
-            tokens.setTokens(d->m_tokens);
-            emit store(tokens);
-            TRACE() << d->m_tokens;
-        }
 
         QVariant tokenVar = d->m_tokens.value(d->m_key);
         QVariantMap token;
@@ -340,7 +336,7 @@ namespace OAuth2PluginNS {
                     response.setAccessToken(token.value(TOKEN).toByteArray());
                     response.setRefreshToken(token.value(REFRESH_TOKEN).toByteArray());
                     response.setExpiresIn(token.value(EXPIRY).toUInt());
-                    emit result(response);
+                    replyResult(response);
                     return;
                 }
             } else if (token.contains(TOKEN) && token.contains(SECRET)) {
@@ -358,7 +354,7 @@ namespace OAuth2PluginNS {
                         response.setScreenName(token.value(SCREEN_NAME).toByteArray());
                     }
 
-                    emit result(response);
+                    replyResult(response);
                     return;
                 }
             }
@@ -376,7 +372,7 @@ namespace OAuth2PluginNS {
             }
             sendOAuth1PostRequest();
         } else {
-            emit error(Error(Error::MechanismNotAvailable));
+            replyError(Error(Error::MechanismNotAvailable));
         }
     }
 
@@ -558,9 +554,9 @@ namespace OAuth2PluginNS {
         if (data.QueryErrorCode() != QUERY_ERROR_NONE) {
             TRACE() << "userActionFinished with error: " << data.QueryErrorCode();
             if (data.QueryErrorCode() == QUERY_ERROR_CANCELED)
-                emit error(Error(Error::SessionCanceled, QLatin1String("Cancelled by user")));
+                replyError(Error(Error::SessionCanceled, QLatin1String("Cancelled by user")));
             else
-                emit error(Error(Error::UserInteraction,
+                replyError(Error(Error::UserInteraction,
                                  QString("userActionFinished error: ")
                                  + QString::number(data.QueryErrorCode())));
 
@@ -575,14 +571,14 @@ namespace OAuth2PluginNS {
         QUrl url = QUrl(data.UrlResponse());
         if( url.hasQueryItem(DENIED) ) {
             // used chose "Cancel" in the web browser
-            emit error(Error(Error::SessionCanceled, QLatin1String("Cancelled by user")));
+            replyError(Error(Error::SessionCanceled, QLatin1String("Cancelled by user")));
             clearData();
             return;
         }
 
         if (url.hasQueryItem(AUTH_ERROR)) {
             TRACE() << "Server denied access permission";
-            emit error(Error(Error::PermissionDenied, url.queryItemValue(AUTH_ERROR)));
+            replyError(Error(Error::PermissionDenied, url.queryItemValue(AUTH_ERROR)));
             return;
         }
 
@@ -603,7 +599,7 @@ namespace OAuth2PluginNS {
                     }
                 }
                 if (respData.AccessToken().isEmpty()) {
-                    emit error(Error(Error::Unknown, QString("Access token not present")));
+                    replyError(Error(Error::Unknown, QString("Access token not present")));
                 } else {
                     //store session key for later use
                     OAuth2TokenData tokens;
@@ -616,10 +612,10 @@ namespace OAuth2PluginNS {
                     emit store(tokens);
                     TRACE() << d->m_tokens;
 
-                    emit result(respData);
+                    replyResult(respData);
                 }
             } else {
-                emit error(Error(Error::Unknown, QString("Access token not present")));
+                replyError(Error(Error::Unknown, QString("Access token not present")));
             }
         } else if (d->m_mechanism == WEB_SERVER) {
             // Access grant can be one of the floolwing types
@@ -665,7 +661,7 @@ namespace OAuth2PluginNS {
                 newUrl.addQueryItem(REFRESH_TOKEN, refresh_token);
                 sendOAuth2PostRequest(newUrl.encodedQuery());
             } else {
-                emit error(Error(Error::Unknown, QString("Access grant not present")));
+                replyError(Error(Error::Unknown, QString("Access grant not present")));
             }
         } else { // For all OAuth 1 mechanisms
             if (url.hasQueryItem(OAUTH_VERIFIER)) {
@@ -677,7 +673,7 @@ namespace OAuth2PluginNS {
             } else if (url.hasQueryItem(OAUTH_PROBLEM)) {
                 handleOAuth1ProblemError(url.queryItemValue(OAUTH_PROBLEM));
             } else {
-                emit error(Error(Error::Unknown, QString("oauth_verifier missing")));
+                replyError(Error(Error::Unknown, QString("oauth_verifier missing")));
             }
         }
     }
@@ -714,13 +710,13 @@ namespace OAuth2PluginNS {
 
                 if (accessToken.isEmpty()) {
                     TRACE()<< "Access token is empty";
-                    emit error(Error(Error::Unknown));
+                    replyError(Error(Error::Unknown));
                 } else {
                     OAuth2PluginTokenData response;
                     response.setAccessToken(accessToken);
                     response.setRefreshToken(refreshToken);
                     response.setExpiresIn(expiresIn.toInt());
-                    emit result(response);
+                    replyResult(response);
                 }
             }
             // Added to test with facebook Graph API's (handling text/plain content type)
@@ -733,23 +729,23 @@ namespace OAuth2PluginNS {
 
                 if (accessToken.isEmpty()) {
                     TRACE()<< "Access token is empty";
-                    emit error(Error(Error::Unknown));
+                    replyError(Error(Error::Unknown));
                 } else {
                     OAuth2PluginTokenData response;
                     response.setAccessToken(accessToken);
                     response.setRefreshToken(refreshToken);
                     response.setExpiresIn(expiresIn.toInt());
-                    emit result(response);
+                    replyResult(response);
                 }
             } else {
                 TRACE()<< "Unsupported content type received: " << reply->rawHeader(CONTENT_TYPE);
-                emit error(Error(Error::OperationFailed, QString("Unsupported content type received")));
+                replyError(Error(Error::OperationFailed, QString("Unsupported content type received")));
             }
         }
         // Handling 200 OK response (HTTP_STATUS_OK) WITHOUT content
         else {
             TRACE()<< "Content is not present";
-            emit error(Error(Error::OperationFailed, QString("Content missing")));
+            replyError(Error(Error::OperationFailed, QString("Content missing")));
         }
     }
 
@@ -789,7 +785,7 @@ namespace OAuth2PluginNS {
                     d->m_oauth1TokenSecret = map[OAUTH_TOKEN_SECRET].toAscii();
                     if (d->m_oauth1Token.isEmpty() || d->m_oauth1TokenSecret.isEmpty()) {
                         TRACE() << "OAuth request token  or secret is empty";
-                        emit error(Error(Error::Unknown, QString("Request token or secret missing")));
+                        replyError(Error(Error::Unknown, QString("Request token or secret missing")));
                     } else {
                         sendOAuth1AuthRequest();
                     }
@@ -799,7 +795,7 @@ namespace OAuth2PluginNS {
                     d->m_oauth1TokenSecret = map[OAUTH_TOKEN_SECRET].toAscii();
                     if (d->m_oauth1Token.isEmpty() || d->m_oauth1TokenSecret.isEmpty()) {
                         TRACE()<< "OAuth access token or secret is empty";
-                        emit error(Error(Error::Unknown, QString("Access token or secret missing")));
+                        replyError(Error(Error::Unknown, QString("Access token or secret missing")));
                     } else {
                         OAuth1PluginTokenData response;
                         response.setAccessToken(d->m_oauth1Token);
@@ -828,21 +824,21 @@ namespace OAuth2PluginNS {
                         tokens.setTokens(d->m_tokens);
                         emit store(tokens);
 
-                        emit result(response);
+                        replyResult(response);
                     }
                 } else {
                     Q_ASSERT_X(false, __FUNCTION__, "Invalid OAuth1 POST request");
                 }
             } else {
                 TRACE()<< "Unsupported content type received: " << reply->rawHeader(CONTENT_TYPE);
-                emit error(Error(Error::OperationFailed,
+                replyError(Error(Error::OperationFailed,
                                  QString("Unsupported content type received")));
             }
         }
         // Handling 200 OK response (HTTP_STATUS_OK) WITHOUT content
         else {
             TRACE()<< "Content is not present";
-            emit error(Error(Error::OperationFailed, QString("Content missing")));
+            replyError(Error(Error::OperationFailed, QString("Content missing")));
         }
         d->m_oauth1RequestType = OAUTH1_POST_REQUEST_INVALID;
     }
@@ -855,7 +851,7 @@ namespace OAuth2PluginNS {
             type = Error::PermissionDenied;
         }
         TRACE() << "Error Emitted";
-        emit error(Error(type, errorString));
+        replyError(Error(type, errorString));
     }
 
     void OAuth2Plugin::handleOAuth1Error(const QByteArray &reply)
@@ -872,8 +868,8 @@ namespace OAuth2PluginNS {
             return;
         }
 
-        TRACE() << "Error Emitted";
-        emit error(Error(Error::Unknown, errorString));
+        TRACE() << "Emitting error.";
+        replyError(Error(Error::Unknown, errorString));
     }
 
     void OAuth2Plugin::handleOAuth2Error(const QByteArray &reply)
@@ -909,7 +905,7 @@ namespace OAuth2PluginNS {
                 type = Error::InvalidCredentials;
             }
             TRACE() << "Error Emitted";
-            emit error(Error(type, errorString));
+            replyError(Error(type, errorString));
             return;
         }
 
@@ -917,12 +913,12 @@ namespace OAuth2PluginNS {
         errorString = map["message"].toByteArray();
         if (!errorString.isEmpty()) {
             TRACE() << "Error Emitted";
-            emit error(Error(Error::OperationFailed, errorString));
+            replyError(Error(Error::OperationFailed, errorString));
             return;
         }
 
         TRACE() << "Error Emitted";
-        emit error(Error(Error::Unknown, errorString));
+        replyError(Error(Error::Unknown, errorString));
     }
 
     bool OAuth2Plugin::handleNetworkError(QNetworkReply::NetworkError err)
@@ -946,7 +942,7 @@ namespace OAuth2PluginNS {
             d->m_reply->deleteLater();
             d->m_reply = 0;
         }
-        emit error(Error(type, errorString));
+        replyError(Error(type, errorString));
         return true;
     }
 
@@ -961,7 +957,7 @@ namespace OAuth2PluginNS {
             d->m_reply->deleteLater();
             d->m_reply = 0;
         }
-        emit error(Error(Error::Ssl, errorString));
+        replyError(Error(Error::Ssl, errorString));
     }
 
     void OAuth2Plugin::refresh(const SignOn::UiSessionData &data)
@@ -1059,7 +1055,25 @@ namespace OAuth2PluginNS {
     {
         delete d;
         d = NULL;
-        d = new Private(this);
+        d = new Private(this, true);
+    }
+
+    void OAuth2Plugin::replyError(const Error &err)
+    {
+        if (d->m_isProcessing) {
+            TRACE() << "Error Emitted";
+            emit error(err);
+            d->m_isProcessing = false;
+        }
+    }
+
+    void OAuth2Plugin::replyResult(const SessionData &data)
+    {
+        if (d->m_isProcessing) {
+            TRACE() << "Result Emitted";
+            emit result(data);
+            d->m_isProcessing = false;
+        }
     }
 
     SIGNON_DECL_AUTH_PLUGIN(OAuth2Plugin)
