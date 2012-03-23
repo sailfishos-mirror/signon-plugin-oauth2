@@ -489,6 +489,7 @@ namespace OAuth2PluginNS {
                           .arg(urlEncode(inData.ConsumerKey())));
         authHeader.append(DELIMITER);
         // Nonce
+        srandom(time(NULL));
         unsigned long nonce1 = (unsigned long) random();
         unsigned long nonce2 = (unsigned long) random();
         QString oauthNonce = QString("%1%2").arg(nonce1).arg(nonce2);
