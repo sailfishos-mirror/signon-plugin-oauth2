@@ -1055,10 +1055,14 @@ namespace OAuth2PluginNS {
     void OAuth2Plugin::clearData()
     {
         bool isProcessing = d->m_isProcessing;
+        QString key = d->m_key;
+        QString mechanism = d->m_mechanism;
         delete d;
         d = NULL;
         //keep the current processing state
         d = new Private(this, isProcessing);
+        d->m_key = key;
+        d->m_mechanism = mechanism;
     }
 
     void OAuth2Plugin::replyError(const Error &err)
