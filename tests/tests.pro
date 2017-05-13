@@ -22,10 +22,8 @@ HEADERS += \
     $${TOP_SRC_DIR}/src/plugin.h \
     oauth2plugintest.h
 INCLUDEPATH += . \
-    $${TOP_SRC_DIR}/src \
-    /usr/include/signon-qt
+    $${TOP_SRC_DIR}/src
 PKGCONFIG += \
-    libsignon-qt5 \
     signon-plugins
 
 

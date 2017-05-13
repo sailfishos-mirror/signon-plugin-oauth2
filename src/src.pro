@@ -26,7 +26,6 @@ SOURCES += \
     oauth2plugin.cpp \
     plugin.cpp
 PKGCONFIG += \
-    libsignon-qt5 \
     signon-plugins
 
 headers.files = $$public_headers
