@@ -3,7 +3,11 @@ include( common-project-config.pri )
 
 TEMPLATE  = subdirs
 CONFIG   += ordered
-SUBDIRS   = src tests example
+SUBDIRS   = src tests
+
+CONFIG(make_examples) {
+    SUBDIRS += example
+}
 
 include( common-installs-config.pri )
 
