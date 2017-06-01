@@ -9,6 +9,10 @@ CONFIG(make_examples) {
     SUBDIRS += example
 }
 
+CONFIG(nomake_tests) {
+    SUBDIRS -= tests
+}
+
 include( common-installs-config.pri )
 
 #include( doc/doc.pri )

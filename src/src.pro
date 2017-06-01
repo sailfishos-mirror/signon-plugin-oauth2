@@ -25,8 +25,14 @@ SOURCES += \
     oauth1plugin.cpp \
     oauth2plugin.cpp \
     plugin.cpp
-PKGCONFIG += \
-    signon-plugins
+
+isEmpty(SIGNON_PLUGINS_INCLUDEPATH) {
+    PKGCONFIG += signon-plugins
+} else {
+    INCLUDEPATH += $${SIGNON_PLUGINS_INCLUDEPATH}
+    LIBS += $${SIGNON_PLUGINS_LIBS}
+    QMAKE_LIBDIR += $${SIGNON_PLUGINS_LIBDIR}
+}
 
 headers.files = $$public_headers
 pkgconfig.files = signon-oauth2plugin.pc
