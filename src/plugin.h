@@ -64,6 +64,20 @@ private:
     QNetworkAccessManager *m_networkAccessManager;
 };
 
+#ifdef SIGNON_PLUGINS_HAS_AUTHPLUGINIF_2
+
+class PluginInterface: public QObject, AuthPluginInterface2
+{
+    Q_OBJECT
+    Q_INTERFACES(AuthPluginInterface2)
+    Q_PLUGIN_METADATA(IID "com.nokia.SingleSignOn.PluginInterface/2")
+
+public:
+    AuthPluginInterface *createAuthPlugin(QObject *parent = 0) Q_DECL_OVERRIDE;
+};
+
+#endif
+
 } //namespace OAuth2PluginNS
 
 #endif // SIGNON_PLUGIN_OAUTH2_MAIN

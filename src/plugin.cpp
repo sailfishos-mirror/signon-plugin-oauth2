@@ -134,3 +134,12 @@ void Plugin::refresh(const SignOn::UiSessionData &data)
     TRACE();
     if (impl != 0) impl->refresh(data);
 }
+
+#ifdef SIGNON_PLUGINS_HAS_AUTHPLUGINIF_2
+
+AuthPluginInterface *PluginInterface::createAuthPlugin(QObject *parent)
+{
+    return new Plugin(parent);
+}
+
+#endif
