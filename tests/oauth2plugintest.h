@@ -67,6 +67,8 @@ private slots:
     void testClientAuthentication();
     void testTokenPath_data();
     void testTokenPath();
+    void testOAuth2AuthRequestUri_data();
+    void testOAuth2AuthRequestUri();
 
 private:
     Plugin *m_testPlugin;

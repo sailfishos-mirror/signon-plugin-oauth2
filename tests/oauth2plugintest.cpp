@@ -1749,6 +1749,56 @@ void OAuth2PluginTest::testTokenPath()
     delete nam;
 }
 
+void OAuth2PluginTest::testOAuth2AuthRequestUri_data()
+{
+    QTest::addColumn<QString>("mechanism");
+    QTest::addColumn<QVariantMap>("sessionData");
+    QTest::addColumn<QString>("expectedUri");
+
+    OAuth2PluginData sessionData;
+    sessionData.setHost("localhost");
+    sessionData.setAuthPath("authorize");
+    sessionData.setClientId("104660106251471");
+    sessionData.setClientSecret("fa28f40b5a1f8c1d5628963d880636fbkjkjkj");
+    sessionData.setRedirectUri("http://localhost/connect/login_success.html");
+    sessionData.setDisableStateParameter(true);
+
+    QTest::newRow("no scopes") <<
+        "user_agent" <<
+        sessionData.toMap() <<
+        "https://localhost/authorize?client_id=104660106251471&"
+        "redirect_uri=http%3A%2F%2Flocalhost%2Fconnect%2Flogin_success.html";
+
+    sessionData.setHost("www.example.com");
+    sessionData.setTokenPath("access_token");
+    sessionData.setClientId("104660106251471");
+    sessionData.setClientSecret("fa28f40b5a1f8c1d5628963d880636fbkjkjkj");
+    sessionData.setRedirectUri("http://localhost/connect/login_success.html");
+    sessionData.setScope(QStringList() << "http://scope1" << "http://scope2");
+
+    QTest::newRow("with scopes") <<
+        "web_server" <<
+        sessionData.toMap() <<
+        "https://www.example.com/authorize?client_id=104660106251471&"
+        "redirect_uri=http%3A%2F%2Flocalhost%2Fconnect%2Flogin_success.html&"
+        "scope=http%3A%2F%2Fscope1 http%3A%2F%2Fscope2";
+}
+
+void OAuth2PluginTest::testOAuth2AuthRequestUri()
+{
+    QFETCH(QString, mechanism);
+    QFETCH(QVariantMap, sessionData);
+    QFETCH(QString, expectedUri);
+
+    QSignalSpy userActionRequired(m_testPlugin,
+                                  SIGNAL(userActionRequired(const SignOn::UiSessionData&)));
+
+    m_testPlugin->process(sessionData, mechanism);
+    QCOMPARE(userActionRequired.count(), 1);
+    UiSessionData uiRequest = userActionRequired.at(0).at(0).value<UiSessionData>();
+    QCOMPARE(uiRequest.OpenUrl(), expectedUri);
+}
+
 //end test cases
 
 QTEST_MAIN(OAuth2PluginTest)

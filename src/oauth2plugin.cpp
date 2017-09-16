@@ -131,7 +131,8 @@ void OAuth2Plugin::sendOAuth2AuthRequest()
 
     QUrl url(QString("https://%1/%2").arg(d->m_oauth2Data.Host()).arg(d->m_oauth2Data.AuthPath()));
     url.addQueryItem(CLIENT_ID, d->m_oauth2Data.ClientId());
-    url.addQueryItem(REDIRECT_URI, d->m_oauth2Data.RedirectUri());
+    url.addQueryItem(REDIRECT_URI,
+                     QUrl::toPercentEncoding(d->m_oauth2Data.RedirectUri()));
     if (!d->m_oauth2Data.DisableStateParameter()) {
         d->m_state = QString::number(qrand());
         url.addQueryItem(STATE, d->m_state);
@@ -156,7 +157,8 @@ void OAuth2Plugin::sendOAuth2AuthRequest()
         }
 
         // Passing list of scopes
-        url.addQueryItem(SCOPE, d->m_oauth2Data.Scope().join(separator));
+        QString scopeString = d->m_oauth2Data.Scope().join(separator);
+        url.addQueryItem(SCOPE, QUrl::toPercentEncoding(scopeString));
     }
     TRACE() << "Url = " << url.toString();
     SignOn::UiSessionData uiSession;
