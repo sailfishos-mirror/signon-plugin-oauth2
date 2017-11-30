@@ -7,7 +7,6 @@ QT += core \
     network
 QT -= gui
 CONFIG += plugin \
-    build_all \
     warn_on \
     link_pkgconfig
 public_headers += oauth2data.h oauth1data.h
