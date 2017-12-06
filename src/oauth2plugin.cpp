@@ -44,6 +44,7 @@ const QString USER_AGENT = QString("user_agent");
 const QString TOKEN = QString("Token");
 const QString EXPIRY = QString("Expiry");
 const QString SCOPES = QString("Scopes");
+const QString EXTRA_FIELDS = QString("ExtraFields");
 
 const int HTTP_STATUS_OK = 200;
 const QString AUTH_CODE = QString("code");
@@ -230,6 +231,9 @@ bool OAuth2Plugin::respondWithStoredToken(const QVariantMap &token,
         if (token.contains(EXPIRY)) {
             response.setExpiresIn(timeToExpiry);
         }
+        if (token.contains(EXTRA_FIELDS)) {
+            response.setExtraFields(token.value(EXTRA_FIELDS).toMap());
+        }
         TRACE() << "Responding with stored token";
         emit result(response);
         return true;
@@ -358,6 +362,7 @@ void OAuth2Plugin::userActionFinished(const SignOn::UiSessionData &data)
             QString state;
             respData.setScope(d->m_oauth2Data.Scope());
             QUrlQuery fragment(url.fragment());
+            QVariantMap extraFields;
             typedef QPair<QString, QString> StringPair;
             Q_FOREACH(const StringPair &pair, fragment.queryItems()) {
                 if (pair.first == ACCESS_TOKEN) {
@@ -370,8 +375,11 @@ void OAuth2Plugin::userActionFinished(const SignOn::UiSessionData &data)
                     state = pair.second;
                 } else if (pair.first == SCOPE) {
                     respData.setScope(pair.second.split(' ', QString::SkipEmptyParts));
+                } else {
+                    extraFields.insert(pair.first, pair.second);
                 }
             }
+            respData.setExtraFields(extraFields);
             if (!d->m_oauth2Data.DisableStateParameter() &&
                 state != d->m_state) {
                 Q_EMIT error(Error(Error::NotAuthorized,
@@ -504,17 +512,17 @@ void OAuth2Plugin::serverReply(QNetworkReply *reply)
             // The error has already been delivered
             return;
         }
-        QByteArray accessToken = map["access_token"].toByteArray();
-        int expiresIn = map["expires_in"].toInt();
+        QByteArray accessToken = map.take("access_token").toByteArray();
+        int expiresIn = map.take("expires_in").toInt();
         if (expiresIn == 0) {
             // Facebook uses just "expires" as key
-            expiresIn = map["expires"].toInt();
+            expiresIn = map.take("expires").toInt();
         }
-        QByteArray refreshToken = map["refresh_token"].toByteArray();
+        QByteArray refreshToken = map.take("refresh_token").toByteArray();
 
         QStringList scope;
         if (map.contains(SCOPE)) {
-            QString rawScope = QString::fromUtf8(map[SCOPE].toByteArray());
+            QString rawScope = QString::fromUtf8(map.take(SCOPE).toByteArray());
             scope = rawScope.split(' ', QString::SkipEmptyParts);
         } else {
             scope = d->m_oauth2Data.Scope();
@@ -530,6 +538,7 @@ void OAuth2Plugin::serverReply(QNetworkReply *reply)
             response.setRefreshToken(refreshToken);
             response.setExpiresIn(expiresIn);
             response.setScope(scope);
+            response.setExtraFields(map);
             storeResponse(response);
             emit result(response);
         }
@@ -692,6 +701,7 @@ void OAuth2Plugin::storeResponse(const OAuth2PluginTokenData &response)
     }
     token.insert(TIMESTAMP, QDateTime::currentDateTime().toTime_t());
     token.insert(SCOPES, d->m_oauth2Data.Scope());
+    token.insert(EXTRA_FIELDS, response.ExtraFields());
     d->m_tokens.insert(d->m_key, QVariant::fromValue(token));
     tokens.setTokens(d->m_tokens);
     Q_EMIT store(tokens);

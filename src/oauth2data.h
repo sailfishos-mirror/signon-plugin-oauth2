@@ -118,6 +118,10 @@ namespace OAuth2PluginNS {
          * Granted permissions
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QStringList, Scope);
+        /*!
+         * Any extra (non standard) fields which were returned by the server
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QVariantMap, ExtraFields);
     };
 
 } // namespace OAuth2PluginNS
