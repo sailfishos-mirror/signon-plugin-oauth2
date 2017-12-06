@@ -7,7 +7,9 @@
 # Common configuration for all projects.
 #-----------------------------------------------------------------------------
 
-CONFIG         += link_pkgconfig
+CONFIG += \
+    c++11 \
+    link_pkgconfig
 #MOC_DIR         = .moc
 #OBJECTS_DIR     = .obj
 RCC_DIR         = resources
