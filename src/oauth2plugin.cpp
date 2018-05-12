@@ -146,19 +146,8 @@ void OAuth2Plugin::sendOAuth2AuthRequest()
         url.addQueryItem(DISPLAY, d->m_oauth2Data.Display());
     }
     if (!d->m_oauth2Data.Scope().empty()) {
-        QString separator = QLatin1String(" ");
-
-        /* The scopes separator defined in the OAuth 2.0 spec is a space;
-         * unfortunately facebook accepts only a comma, so we have to treat
-         * it as a special case. See:
-         * http://bugs.developers.facebook.net/show_bug.cgi?id=11120
-         */
-        if (d->m_oauth2Data.Host().contains(QLatin1String("facebook.com"))) {
-            separator = QLatin1String(",");
-        }
-
         // Passing list of scopes
-        QString scopeString = d->m_oauth2Data.Scope().join(separator);
+        QString scopeString = d->m_oauth2Data.Scope().join(" ");
         url.addQueryItem(SCOPE, QUrl::toPercentEncoding(scopeString));
     }
     TRACE() << "Url = " << url.toString();
@@ -256,6 +245,18 @@ void OAuth2Plugin::process(const SignOn::SessionData &inData,
         TRACE() << "Invalid parameters passed";
         emit error(Error(Error::MissingData));
         return;
+    }
+
+    const QVariant scopeVariant = inData.getProperty("Scope");
+    if (scopeVariant.type() == QVariant::String) {
+        inData.toMap().insert(QLatin1String("Scope"),
+            QVariant(scopeVariant.toString().split(" ")));
+    }
+
+    const QVariant resptypeVariant = inData.getProperty("ResponseType");
+    if (resptypeVariant.type() == QVariant::String) {
+        inData.toMap().insert(QLatin1String("ResponseType"),
+            QVariant(resptypeVariant.toString().split(" ")));
     }
 
     d->m_mechanism = mechanism;
