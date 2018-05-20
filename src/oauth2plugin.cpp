@@ -571,6 +571,13 @@ void OAuth2Plugin::handleOAuth2Error(const QByteArray &reply)
     QVariantMap map = parseJSONReply(reply);
     QByteArray errorString = map["error"].toByteArray();
     if (!errorString.isEmpty()) {
+        if (d->m_grantType == GrantType::RefreshToken) {
+            /* The refresh token has expired; try once more using
+             * the web-based authentication flow. */
+            TRACE() << "Authenticating without refresh token";
+            sendOAuth2AuthRequest();
+            return;
+        }
         Error::ErrorType type = Error::OperationFailed;
         if (errorString == QByteArray("incorrect_client_credentials")) {
             type = Error::InvalidCredentials;
@@ -603,13 +610,6 @@ void OAuth2Plugin::handleOAuth2Error(const QByteArray &reply)
             type = Error::InvalidCredentials;
         }
         else if (errorString == QByteArray("invalid_grant")) {
-            if (d->m_grantType == GrantType::RefreshToken) {
-                /* The refresh token has expired; try once more using
-                 * the web-based authentication flow. */
-                TRACE() << "Authenticating without refresh token";
-                sendOAuth2AuthRequest();
-                return;
-            }
             type = Error::NotAuthorized;
         }
         TRACE() << "Error Emitted";
