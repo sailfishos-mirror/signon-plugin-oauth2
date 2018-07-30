@@ -42,7 +42,17 @@ namespace OAuth2PluginNS {
         SIGNON_SESSION_DECLARE_PROPERTY(QString, Host);
 
         /*!
-         * Authorization endpoint of the server
+         * hostname component of the authorization endpoint URI
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, AuthHost);
+
+        /*!
+         * hostname component of the token endpoint URI
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, TokenHost);
+
+        /*!
+         * authorization endpoint of the server
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, AuthPath);
 
@@ -50,6 +60,16 @@ namespace OAuth2PluginNS {
          * token endpoint of the server
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, TokenPath);
+
+        /*!
+         * port component of the token endpoint URI
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(quint16, AuthPort);
+
+        /*!
+         * port component of the authorization endpoint URI
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(quint16, TokenPort);
 
         /*!
          * Application client ID and secret
@@ -94,9 +114,14 @@ namespace OAuth2PluginNS {
         SIGNON_SESSION_DECLARE_PROPERTY(QStringList, ResponseType);
 
         /*!
-         * Not in the OAuth2 standard: display type
+         * query component of the authorization endpoint URI
          */
-        SIGNON_SESSION_DECLARE_PROPERTY(QString, Display);
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, AuthQuery);
+
+        /*!
+         * query component of the token endpoint URI
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, TokenQuery);
     };
 
     class OAuth2PluginTokenData : public SignOn::SessionData

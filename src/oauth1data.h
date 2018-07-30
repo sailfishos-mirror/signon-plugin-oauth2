@@ -61,6 +61,12 @@ namespace OAuth2PluginNS {
         SIGNON_SESSION_DECLARE_PROPERTY(QString, Realm);
 
         /*!
+         * one of "PLAINTEXT", "HMAC-SHA1", or "RSA-SHA1"
+         * a method used used to sign the requests.
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, SignatureMethod);
+
+        /*!
          * Set this to true if the access token returned by the previous
          * authentication is invalid. This instructs the OAuth plugin to
          * generate a new access token.

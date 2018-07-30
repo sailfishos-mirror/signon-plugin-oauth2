@@ -83,6 +83,8 @@ private:
     QVariantMap parseTextReply(const QByteArray &reply);
     void handleOAuth2Error(const QByteArray &reply);
     QString urlEncode(QString strData);
+    QUrl getAuthUrl();
+    QUrl getTokenUrl();
 
     OAuth2PluginPrivate *d_ptr;
     Q_DECLARE_PRIVATE(OAuth2Plugin)

@@ -40,6 +40,7 @@ namespace OAuth2PluginNS {
 
 const QString WEB_SERVER = QString("web_server");
 const QString USER_AGENT = QString("user_agent");
+const QString OAUTH2 = QString("oauth2");
 
 const QString TOKEN = QString("Token");
 const QString EXPIRY = QString("Expiry");
@@ -56,7 +57,6 @@ const QString PASSWORD = QString("password");
 const QString ASSERTION_TYPE = QString("assertion_type");
 const QString ASSERTION = QString("assertion");
 const QString ACCESS_TOKEN = QString("access_token");
-const QString DISPLAY = QString("display");
 const QString EXPIRES_IN = QString("expires_in");
 const QString SCOPE = QString("scope");
 const QString TIMESTAMP = QString("timestamp");
@@ -123,38 +123,82 @@ QStringList OAuth2Plugin::mechanisms()
     QStringList res = QStringList();
     res.append(WEB_SERVER);
     res.append(USER_AGENT);
+    res.append(OAUTH2);
     return res;
+}
+
+QUrl OAuth2Plugin::getAuthUrl()
+{
+    Q_D(OAuth2Plugin);
+
+    QString host = d->m_oauth2Data.Host();
+    if (host.isEmpty())
+        host = d->m_oauth2Data.AuthHost();
+
+    if (host.isEmpty())
+        return QUrl();
+
+    QUrl url(QString("https://%1/%2").arg(host).arg(d->m_oauth2Data.AuthPath()));
+    quint16 port = d->m_oauth2Data.AuthPort();
+    if (port != 0)
+        url.setPort(port);
+
+    QString query = d->m_oauth2Data.AuthQuery();
+    if (!query.isEmpty())
+        url.setQuery(query);
+
+    return url;
+}
+
+QUrl OAuth2Plugin::getTokenUrl()
+{
+    Q_D(OAuth2Plugin);
+
+    QString host = d->m_oauth2Data.Host();
+    if (host.isEmpty())
+        host = d->m_oauth2Data.TokenHost();
+
+    if (host.isEmpty())
+        return QUrl();
+
+    QUrl url(QString("https://%1/%2").arg(host).arg(d->m_oauth2Data.TokenPath()));
+    quint16 port = d->m_oauth2Data.TokenPort();
+    if (port != 0)
+        url.setPort(port);
+
+    QString query = d->m_oauth2Data.TokenQuery();
+    if (!query.isEmpty())
+        url.setQuery(query);
+
+    return url;
 }
 
 void OAuth2Plugin::sendOAuth2AuthRequest()
 {
     Q_D(OAuth2Plugin);
 
-    QUrl url(QString("https://%1/%2").arg(d->m_oauth2Data.Host()).arg(d->m_oauth2Data.AuthPath()));
+    QUrl url = getAuthUrl();
     url.addQueryItem(CLIENT_ID, d->m_oauth2Data.ClientId());
-    url.addQueryItem(REDIRECT_URI,
-                     QUrl::toPercentEncoding(d->m_oauth2Data.RedirectUri()));
+    QString redirectUri = d->m_oauth2Data.RedirectUri();
+    url.addQueryItem(REDIRECT_URI, QUrl::toPercentEncoding(redirectUri));
     if (!d->m_oauth2Data.DisableStateParameter()) {
         d->m_state = QString::number(qrand());
         url.addQueryItem(STATE, d->m_state);
     }
-    if (!d->m_oauth2Data.ResponseType().isEmpty()) {
-        url.addQueryItem(RESPONSE_TYPE,
-                         d->m_oauth2Data.ResponseType().join(" "));
+    QStringList responseType = d->m_oauth2Data.ResponseType();
+    if (!responseType.isEmpty()) {
+        url.addQueryItem(RESPONSE_TYPE, responseType.join(" "));
     }
-    if (!d->m_oauth2Data.Display().isEmpty()) {
-        url.addQueryItem(DISPLAY, d->m_oauth2Data.Display());
-    }
-    if (!d->m_oauth2Data.Scope().empty()) {
+    QStringList scopes = d->m_oauth2Data.Scope();
+    if (!scopes.isEmpty()) {
         // Passing list of scopes
-        QString scopeString = d->m_oauth2Data.Scope().join(" ");
-        url.addQueryItem(SCOPE, QUrl::toPercentEncoding(scopeString));
+        url.addQueryItem(SCOPE, QUrl::toPercentEncoding(scopes.join(" ")));
     }
     TRACE() << "Url = " << url.toString();
     SignOn::UiSessionData uiSession;
     uiSession.setOpenUrl(url.toString());
-    if (!d->m_oauth2Data.RedirectUri().isEmpty())
-        uiSession.setFinalUrl(d->m_oauth2Data.RedirectUri());
+    if (!redirectUri.isEmpty())
+        uiSession.setFinalUrl(redirectUri);
 
     /* add username and password, for fields initialization (the
      * decision on whether to actually use them is up to the signon UI */
@@ -168,13 +212,14 @@ bool OAuth2Plugin::validateInput(const SignOn::SessionData &inData,
                                  const QString &mechanism)
 {
     OAuth2PluginData input = inData.data<OAuth2PluginData>();
-    if (input.Host().isEmpty()
+    if ((input.Host().isEmpty() && 
+        (input.AuthHost().isEmpty() || input.TokenHost().isEmpty()))
         || input.ClientId().isEmpty()
         || input.RedirectUri().isEmpty()
         || input.AuthPath().isEmpty())
         return false;
 
-    if (mechanism == WEB_SERVER) {
+    if (mechanism == WEB_SERVER || mechanism == OAUTH2) {
         /* According to the specs, the client secret is also required; however,
          * some services do not require it, see for instance point 8 from
          * http://msdn.microsoft.com/en-us/library/live/hh243647.aspx#authcodegrant
@@ -319,8 +364,10 @@ void OAuth2Plugin::process(const SignOn::SessionData &inData,
     d->m_username = inData.UserName();
     d->m_password = inData.Secret();
 
-    if (mechanism == WEB_SERVER || mechanism == USER_AGENT) {
-        if (mechanism == WEB_SERVER &&
+    if (mechanism == WEB_SERVER
+       || mechanism == USER_AGENT
+       || mechanism == OAUTH2) {
+        if ((mechanism == WEB_SERVER || mechanism == OAUTH2) &&
             storedData.contains(REFRESH_TOKEN) &&
             !storedData[REFRESH_TOKEN].toString().isEmpty()) {
             /* If we have a refresh token, use it to get a renewed
@@ -399,7 +446,7 @@ void OAuth2Plugin::userActionFinished(const SignOn::UiSessionData &data)
         else {
             emit error(Error(Error::NotAuthorized, QString("Access token not present")));
         }
-    } else if (d->m_mechanism == WEB_SERVER) {
+    } else if (d->m_mechanism == WEB_SERVER || d->m_mechanism == OAUTH2) {
         // Access grant can be one of the floolwing types
         // 1. Authorization code (code, redirect_uri)
         // 2. Resource owner credentials (username, password)
@@ -642,8 +689,7 @@ void OAuth2Plugin::sendOAuth2PostRequest(QUrl &postData,
 
     QUrl url(d->m_oauth2Data.TokenPath());
     if (url.isRelative()) {
-        url = QUrl(QString("https://%1/%2").arg(d->m_oauth2Data.Host())
-                   .arg(d->m_oauth2Data.TokenPath()));
+        url = getTokenUrl();
     }
     QNetworkRequest request(url);
     request.setRawHeader(CONTENT_TYPE, CONTENT_APP_URLENCODED);

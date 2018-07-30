@@ -47,6 +47,7 @@ typedef enum {
 const QString HMAC_SHA1 = QString("HMAC-SHA1");
 const QString PLAINTEXT = QString("PLAINTEXT");
 const QString RSA_SHA1 = QString("RSA-SHA1");
+const QString OAUTH1 = QString("oauth1");
 
 const QString EXPIRY = QString ("Expiry");
 const QString USER_ID = QString("user_id");
@@ -136,6 +137,7 @@ QStringList OAuth1Plugin::mechanisms()
     QStringList res = QStringList();
     res.append(HMAC_SHA1);
     res.append(PLAINTEXT);
+    res.append(OAUTH1);
     return res;
 }
 
@@ -167,9 +169,12 @@ void OAuth1Plugin::sendOAuth1AuthRequest()
 bool OAuth1Plugin::validateInput(const SignOn::SessionData &inData,
                                  const QString &mechanism)
 {
-    Q_UNUSED(mechanism);
-
     OAuth1PluginData input = inData.data<OAuth1PluginData>();
+
+    if (mechanism == OAUTH1 && input.SignatureMethod().isEmpty()) {
+        return false;
+    }
+
     if (input.AuthorizationEndpoint().isEmpty()
         || input.ConsumerKey().isEmpty()
         || input.ConsumerSecret().isEmpty()
@@ -223,9 +228,13 @@ void OAuth1Plugin::process(const SignOn::SessionData &inData,
         return;
     }
 
-    d->m_mechanism = mechanism;
     d->m_oauth1Data = inData.data<OAuth1PluginData>();
-    d->m_key = inData.data<OAuth1PluginData>().ConsumerKey();
+    d->m_key = d->m_oauth1Data.ConsumerKey();
+    if (mechanism == OAUTH1) {
+        d->m_mechanism = d->m_oauth1Data.SignatureMethod();
+    } else {
+        d->m_mechanism = mechanism;
+    }
 
     //get stored data
     OAuth2TokenData tokens = inData.data<OAuth2TokenData>();
