@@ -37,6 +37,8 @@ namespace OAuth2PluginNS {
     {
     friend class ::OAuth2PluginTest;
     public:
+        using SignOn::SessionData::SessionData;
+
         /*!
          * Request token endpoint of the server
          */

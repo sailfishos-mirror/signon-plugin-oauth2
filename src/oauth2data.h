@@ -36,6 +36,8 @@ namespace OAuth2PluginNS {
     {
     friend class ::OAuth2PluginTest;
     public:
+        using SignOn::SessionData::SessionData;
+
         /*!
          * hostname of the server
          */
