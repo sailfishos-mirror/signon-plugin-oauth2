@@ -27,6 +27,7 @@
 #include <QNetworkReply>
 #include <QPointer>
 #include <QRegExp>
+#include <QScopedPointer>
 #include <QSignalSpy>
 #include <QTimer>
 #include <QtTest/QtTest>
@@ -1801,6 +1802,92 @@ void OAuth2PluginTest::testTokenPath()
     QCOMPARE(nam->m_lastRequest.url(), QUrl(expectedTokenUrl));
 
     delete nam;
+}
+
+void OAuth2PluginTest::testTokenQuery_data()
+{
+    QTest::addColumn<QVariantMap>("sessionData");
+    QTest::addColumn<QString>("expectedTokenUrl");
+    QTest::addColumn<QString>("expectedTokenData");
+
+    QString fixedData =
+        QStringLiteral("grant_type=authorization_code&code=c0d3&"
+                       "redirect_uri=http://localhost/resp.html&"
+                       "client_id=104660106251471");
+
+    QTest::newRow("no query") <<
+        QVariantMap {
+            { "Host", "localhost" },
+            { "TokenPath", "access_token" },
+        } <<
+        "https://localhost/access_token" <<
+        fixedData;
+
+    QTest::newRow("with query") <<
+        QVariantMap {
+            { "Host", "localhost" },
+            { "TokenPath", "access_token" },
+            { "TokenQuery", "one=1&bool=false" },
+        } <<
+        "https://localhost/access_token" <<
+        QString("one=1&bool=false&") + fixedData;
+
+    QTest::newRow("token host, no query") <<
+        QVariantMap {
+            { "AuthHost", "localhost" },
+            { "TokenHost", "localhost" },
+            { "TokenPath", "access_token" },
+        } <<
+        "https://localhost/access_token" <<
+        fixedData;
+
+    QTest::newRow("token host, with query") <<
+        QVariantMap {
+            { "AuthHost", "localhost" },
+            { "TokenHost", "localhost" },
+            { "TokenPath", "access_token" },
+            { "TokenQuery", "one=1&bool=false" },
+        } <<
+        "https://localhost/access_token" <<
+        QString("one=1&bool=false&") + fixedData;
+}
+
+void OAuth2PluginTest::testTokenQuery()
+{
+    QFETCH(QVariantMap, sessionData);
+    QFETCH(QString, expectedTokenUrl);
+    QFETCH(QString, expectedTokenData);
+
+    SignOn::UiSessionData info;
+    OAuth2PluginData data(sessionData);
+    data.setAuthPath("authorize");
+    data.setClientId("104660106251471");
+    data.setRedirectUri("http://localhost/resp.html");
+
+    QSignalSpy result(m_testPlugin, SIGNAL(result(const SignOn::SessionData&)));
+    QSignalSpy error(m_testPlugin, SIGNAL(error(const SignOn::Error &)));
+    QSignalSpy userActionRequired(m_testPlugin,
+                                  SIGNAL(userActionRequired(const SignOn::UiSessionData&)));
+
+    QScopedPointer<TestNetworkAccessManager> nam(new TestNetworkAccessManager);
+    m_testPlugin->m_networkAccessManager = nam.data();
+    TestNetworkReply *reply = new TestNetworkReply(this);
+    reply->setStatusCode(200);
+    reply->setContentType("application/json");
+    reply->setContent("{ \"access_token\":\"t0k3n\", \"expires_in\": 3600 }");
+    nam->setNextReply(reply);
+
+    m_testPlugin->process(data, QString("web_server"));
+    QTRY_COMPARE(userActionRequired.count(), 1);
+    QString state = parseState(userActionRequired);
+
+    info.setUrlResponse("http://localhost/resp.html?code=c0d3&state=" + state);
+    m_testPlugin->userActionFinished(info);
+
+    QTRY_COMPARE(result.count(), 1);
+    QCOMPARE(error.count(), 0);
+    QCOMPARE(nam->m_lastRequest.url(), QUrl(expectedTokenUrl));
+    QCOMPARE(nam->m_lastRequestData, expectedTokenData.toUtf8());
 }
 
 void OAuth2PluginTest::testOAuth2AuthRequestUri_data()

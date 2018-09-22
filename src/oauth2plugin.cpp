@@ -166,10 +166,6 @@ QUrl OAuth2Plugin::getTokenUrl()
     if (port != 0)
         url.setPort(port);
 
-    QString query = d->m_oauth2Data.TokenQuery();
-    if (!query.isEmpty())
-        url.setQuery(query);
-
     return url;
 }
 
@@ -453,6 +449,11 @@ void OAuth2Plugin::userActionFinished(const SignOn::UiSessionData &data)
         // 3. Assertion (assertion_type, assertion)
         // 4. Refresh Token (refresh_token)
         QUrl newUrl;
+        QString query = d->m_oauth2Data.TokenQuery();
+        if (!query.isEmpty()) {
+            newUrl.setQuery(query);
+        }
+
         if (url.hasQueryItem(AUTH_CODE)) {
             if (!d->m_oauth2Data.DisableStateParameter() &&
                 d->m_state != url.queryItemValue(STATE)) {

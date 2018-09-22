@@ -67,6 +67,8 @@ private slots:
     void testClientAuthentication();
     void testTokenPath_data();
     void testTokenPath();
+    void testTokenQuery_data();
+    void testTokenQuery();
     void testOAuth2AuthRequestUri_data();
     void testOAuth2AuthRequestUri();
 
