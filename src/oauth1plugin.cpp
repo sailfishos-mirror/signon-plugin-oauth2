@@ -60,10 +60,7 @@ const QString AUTH_ERROR = QString("error");
 
 const QString EQUAL = QString("=");
 const QString AMPERSAND = QString("&");
-const QString EQUAL_WITH_QUOTES = QString("%1=\"%2\"");
-const QString DELIMITER = QString(", ");
-const QString SPACE = QString(" ");
-const QString OAUTH = QString("OAuth");
+const QByteArray OAUTH_HEADER_PREFIX = QByteArray("OAuth ");
 const QString OAUTH_REALM = QString("realm");
 const QString OAUTH_CALLBACK = QString("oauth_callback");
 const QString OAUTH_CONSUMERKEY = QString("oauth_consumer_key");
@@ -412,47 +409,33 @@ QByteArray OAuth1Plugin::constructSignatureBaseString(const QString &aUrl,
     return signatureBase;
 }
 
-// Method  to create the Authorization header
-QString OAuth1Plugin::createOAuth1Header(const QString &aUrl,
-                                         OAuth1PluginData inData)
+QUrlQuery OAuth1Plugin::createQuery(const QString &aUrl,
+                                    OAuth1PluginData inData)
 {
     Q_D(OAuth1Plugin);
 
-    QString authHeader = OAUTH + SPACE;
+    QUrlQuery query;
+
     if (!inData.Realm().isEmpty()) {
-        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_REALM)
-                          .arg(urlEncode(inData.Realm())));
-        authHeader.append(DELIMITER);
+        query.addQueryItem(OAUTH_REALM, inData.Realm());
     }
     if (!inData.Callback().isEmpty()) {
-        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_CALLBACK)
-                          .arg(urlEncode(inData.Callback())));
-        authHeader.append(DELIMITER);
+        query.addQueryItem(OAUTH_CALLBACK, inData.Callback());
     }
-    authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_CONSUMERKEY)
-                      .arg(urlEncode(inData.ConsumerKey())));
-    authHeader.append(DELIMITER);
+    query.addQueryItem(OAUTH_CONSUMERKEY, inData.ConsumerKey());
     // Nonce
     unsigned long nonce1 = (unsigned long) qrand();
     unsigned long nonce2 = (unsigned long) qrand();
     QString oauthNonce = QString("%1%2").arg(nonce1).arg(nonce2);
-    authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_NONCE)
-                      .arg(urlEncode(oauthNonce)));
-    authHeader.append(DELIMITER);
+    query.addQueryItem(OAUTH_NONCE, oauthNonce);
     // Timestamp
     QString oauthTimestamp = QString("%1").arg(QDateTime::currentDateTime().toTime_t());
-    authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_TIMESTAMP)
-                      .arg(urlEncode(oauthTimestamp)));
-    authHeader.append(DELIMITER);
+    query.addQueryItem(OAUTH_TIMESTAMP, oauthTimestamp);
     if (!d->m_oauth1Token.isEmpty()) {
-        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_TOKEN)
-                          .arg(urlEncode(d->m_oauth1Token)));
-        authHeader.append(DELIMITER);
+        query.addQueryItem(OAUTH_TOKEN, d->m_oauth1Token);
     }
 
-    authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_SIGNATURE_METHOD)
-                      .arg(urlEncode(d->m_mechanism)));
-    authHeader.append(DELIMITER);
+    query.addQueryItem(OAUTH_SIGNATURE_METHOD, d->m_mechanism);
     // Creating the signature
     // PLAINTEXT signature method
     QByteArray secretKey;
@@ -460,9 +443,7 @@ QString OAuth1Plugin::createOAuth1Header(const QString &aUrl,
                      urlEncode(d->m_oauth1TokenSecret));
     if (d->m_mechanism == PLAINTEXT) {
         TRACE() << "Signature = " << secretKey;
-        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_SIGNATURE)
-                          .arg(urlEncode(secretKey)));
-        authHeader.append(DELIMITER);
+        query.addQueryItem(OAUTH_SIGNATURE, secretKey);
     }
     // HMAC-SHA1 signature method
     else if (d->m_mechanism == HMAC_SHA1) {
@@ -471,9 +452,7 @@ QString OAuth1Plugin::createOAuth1Header(const QString &aUrl,
         TRACE() << "Signature Base = " << signatureBase;
         QByteArray signature = hashHMACSHA1(secretKey, signatureBase);
         TRACE() << "Signature = " << signature;
-        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_SIGNATURE)
-                          .arg(urlEncode(signature.toBase64())));
-        authHeader.append(DELIMITER);
+        query.addQueryItem(OAUTH_SIGNATURE, signature.toBase64());
     }
     // TODO: RSA-SHA1 signature method should be implemented
     else {
@@ -481,12 +460,30 @@ QString OAuth1Plugin::createOAuth1Header(const QString &aUrl,
     }
 
     if (!d->m_oauth1TokenVerifier.isEmpty()) {
-        authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_VERIFIER)
-                          .arg(urlEncode(d->m_oauth1TokenVerifier)));
-        authHeader.append(DELIMITER);
+        query.addQueryItem(OAUTH_VERIFIER, d->m_oauth1TokenVerifier);
     }
-    authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_VERSION)
-                      .arg(urlEncode(OAUTH_VERSION_1)));
+    query.addQueryItem(OAUTH_VERSION, OAUTH_VERSION_1);
+
+    return query;
+}
+
+// Method  to create the Authorization header
+QByteArray OAuth1Plugin::createOAuth1Header(const QString &aUrl,
+                                            OAuth1PluginData inData)
+{
+    QUrlQuery query = createQuery(aUrl, inData);
+
+    QByteArray authHeader = OAUTH_HEADER_PREFIX;
+    bool first = true;
+    const auto items = query.queryItems(QUrl::FullyEncoded);
+    for (const auto &pair: items) {
+        if (!first) {
+            authHeader += ", ";
+        } else {
+            first = false;
+        }
+        authHeader.append(pair.first + "=\"" + pair.second + '"');
+    }
 
     return authHeader;
 }
@@ -665,7 +662,7 @@ void OAuth1Plugin::sendOAuth1PostRequest()
 
     QNetworkRequest request;
     request.setRawHeader(CONTENT_TYPE, CONTENT_APP_URLENCODED);
-    QString authHeader;
+    QByteArray authHeader;
     if (d->m_oauth1RequestType == OAUTH1_POST_REQUEST_TOKEN) {
         request.setUrl(d->m_oauth1Data.RequestEndpoint());
         authHeader = createOAuth1Header(d->m_oauth1Data.RequestEndpoint(),
@@ -679,7 +676,7 @@ void OAuth1Plugin::sendOAuth1PostRequest()
     else {
         Q_ASSERT_X(false, __FUNCTION__, "Invalid OAuth1 POST request");
     }
-    request.setRawHeader(QByteArray("Authorization"), authHeader.toAscii());
+    request.setRawHeader(QByteArray("Authorization"), authHeader);
 
     postRequest(request, QByteArray());
 }

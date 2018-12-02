@@ -24,6 +24,7 @@
 #ifndef SIGNON_PLUGIN_OAUTH1
 #define SIGNON_PLUGIN_OAUTH1
 
+#include <QUrlQuery>
 #include <QtCore>
 
 #include "base-plugin.h"
@@ -66,7 +67,8 @@ private:
                                             const QString &timestamp,
                                             const QString &nonce);
     QString urlEncode(QString strData);
-    QString createOAuth1Header(const QString &aUrl, OAuth1PluginData inData);
+    QUrlQuery createQuery(const QString &aUrl, OAuth1PluginData inData);
+    QByteArray createOAuth1Header(const QString &aUrl, OAuth1PluginData inData);
     QByteArray hashHMACSHA1(const QByteArray &keyForHash ,const QByteArray &secret);
     OAuth1PluginTokenData oauth1responseFromMap(const QVariantMap &map);
 
