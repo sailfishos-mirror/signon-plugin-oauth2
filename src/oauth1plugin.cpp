@@ -665,6 +665,11 @@ void OAuth1Plugin::sendOAuth1PostRequest()
 
     QNetworkRequest request;
     request.setRawHeader(CONTENT_TYPE, CONTENT_APP_URLENCODED);
+    if (!d->m_oauth1Data.UserAgent().isEmpty()) {
+        request.setHeader(QNetworkRequest::UserAgentHeader,
+                          d->m_oauth1Data.UserAgent());
+    }
+
     QString authHeader;
     if (d->m_oauth1RequestType == OAUTH1_POST_REQUEST_TOKEN) {
         request.setUrl(d->m_oauth1Data.RequestEndpoint());

@@ -77,6 +77,11 @@ namespace OAuth2PluginNS {
 
 	/* Optional username */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, UserName);
+
+        /*!
+         * The User-Agent to be used in all HTTP requests.
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, UserAgent);
     };
 
     class OAuth1PluginTokenData : public SignOn::SessionData

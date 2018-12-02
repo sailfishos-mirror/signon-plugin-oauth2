@@ -500,6 +500,22 @@ void OAuth2PluginTest::testPluginHmacSha1Process_data()
         -1 <<
         true << QVariantMap() << QVariantMap();
 
+    QTest::newRow("ui-request, User-Agent") <<
+        "PLAINTEXT" <<
+        QVariantMap {
+            { "RequestEndpoint", "https://localhost/oauth/request_token" },
+            { "TokenEndpoint", "https://localhost/oauth/access_token" },
+            { "AuthorizationEndpoint", "https://localhost/oauth/authorize" },
+            { "Callback", "https://localhost/connect/login_success.html" },
+            { "ConsumerKey", "104660106251471" },
+            { "ConsumerSecret", "fa28f40b5a1f8c1d5628963d880636fbkjkjkj" },
+            { "UserAgent", "PhotoTeleport/1.0" },
+        } <<
+        int(200) << "text/plain" <<
+        "oauth_token=HiThere&oauth_token_secret=BigSecret" <<
+        -1 <<
+        true << QVariantMap() << QVariantMap();
+
     /* Now store some tokens and test the responses */
     hmacSha1Data.m_data.insert("UiPolicy", NoUserInteractionPolicy);
     QVariantMap tokens; // ConsumerKey to Token map
@@ -680,6 +696,11 @@ void OAuth2PluginTest::testPluginHmacSha1Process()
     if (!stored.isEmpty()) { QTRY_COMPARE(store.count(), 1); }
     QTRY_COMPARE(userActionRequired.count(), uiExpected ? 1 : 0);
     QTRY_COMPARE(error.count(), errorCode < 0 ? 0 : 1);
+
+    /* Check the user agent */
+    const QNetworkRequest &req = nam->m_lastRequest;
+    QVariant expectedUserAgent = sessionData.value("UserAgent");
+    QCOMPARE(req.header(QNetworkRequest::UserAgentHeader), expectedUserAgent);
 
     if (errorCode < 0) {
         QCOMPARE(error.count(), 0);
