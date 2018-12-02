@@ -355,6 +355,7 @@ QByteArray OAuth1Plugin::hashHMACSHA1(const QByteArray &baseSignatureString,
 }
 
 QByteArray OAuth1Plugin::constructSignatureBaseString(const QString &aUrl,
+    const QByteArray &verb,
     const OAuth1PluginData &inData, const QString &timestamp,
     const QString &nonce)
 {
@@ -401,7 +402,7 @@ QByteArray OAuth1Plugin::constructSignatureBaseString(const QString &aUrl,
                                                   | QUrl::RemoveFragment | QUrl::StripTrailingSlash);
 
     QByteArray signatureBase;
-    signatureBase.append("POST");
+    signatureBase.append(verb);
     signatureBase.append(AMPERSAND);
     signatureBase.append(urlEncode(urlWithHostAndPath));
     signatureBase.append(AMPERSAND);
@@ -410,6 +411,7 @@ QByteArray OAuth1Plugin::constructSignatureBaseString(const QString &aUrl,
 }
 
 QUrlQuery OAuth1Plugin::createQuery(const QString &aUrl,
+                                    const QByteArray &verb,
                                     OAuth1PluginData inData)
 {
     Q_D(OAuth1Plugin);
@@ -448,7 +450,7 @@ QUrlQuery OAuth1Plugin::createQuery(const QString &aUrl,
     // HMAC-SHA1 signature method
     else if (d->m_mechanism == HMAC_SHA1) {
         QByteArray signatureBase = constructSignatureBaseString(aUrl,
-                inData, oauthTimestamp, oauthNonce);
+                verb, inData, oauthTimestamp, oauthNonce);
         TRACE() << "Signature Base = " << signatureBase;
         QByteArray signature = hashHMACSHA1(secretKey, signatureBase);
         TRACE() << "Signature = " << signature;
@@ -471,7 +473,7 @@ QUrlQuery OAuth1Plugin::createQuery(const QString &aUrl,
 QByteArray OAuth1Plugin::createOAuth1Header(const QString &aUrl,
                                             OAuth1PluginData inData)
 {
-    QUrlQuery query = createQuery(aUrl, inData);
+    QUrlQuery query = createQuery(aUrl, "POST", inData);
 
     QByteArray authHeader = OAUTH_HEADER_PREFIX;
     bool first = true;

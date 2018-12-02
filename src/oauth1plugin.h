@@ -63,11 +63,13 @@ private:
     void handleOAuth1ProblemError(const QString &errorString);
     void handleOAuth1Error(const QByteArray &reply);
     QByteArray constructSignatureBaseString(const QString &aUrl,
+                                            const QByteArray &verb,
                                             const OAuth1PluginData &inData,
                                             const QString &timestamp,
                                             const QString &nonce);
     QString urlEncode(QString strData);
-    QUrlQuery createQuery(const QString &aUrl, OAuth1PluginData inData);
+    QUrlQuery createQuery(const QString &aUrl, const QByteArray &verb,
+                          OAuth1PluginData inData);
     QByteArray createOAuth1Header(const QString &aUrl, OAuth1PluginData inData);
     QByteArray hashHMACSHA1(const QByteArray &keyForHash ,const QByteArray &secret);
     OAuth1PluginTokenData oauth1responseFromMap(const QVariantMap &map);
