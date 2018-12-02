@@ -118,18 +118,25 @@ QNetworkAccessManager *BasePlugin::networkAccessManager() const
     return d->m_networkAccessManager;
 }
 
-void BasePlugin::postRequest(const QNetworkRequest &request,
+void BasePlugin::sendRequest(const QNetworkRequest &request,
+                             const QByteArray &verb,
                              const QByteArray &data)
 {
     Q_D(BasePlugin);
 
-    d->m_reply = d->m_networkAccessManager->post(request, data);
+    d->m_reply = d->m_networkAccessManager->sendCustomRequest(request, verb, data);
     connect(d->m_reply, SIGNAL(finished()),
             this, SLOT(onPostFinished()));
     connect(d->m_reply, SIGNAL(error(QNetworkReply::NetworkError)),
             this, SLOT(onNetworkError(QNetworkReply::NetworkError)));
     connect(d->m_reply, SIGNAL(sslErrors(QList<QSslError>)),
             this, SLOT(handleSslErrors(QList<QSslError>)));
+}
+
+void BasePlugin::postRequest(const QNetworkRequest &request,
+                             const QByteArray &data)
+{
+    sendRequest(request, "POST", data);
 }
 
 void BasePlugin::serverReply(QNetworkReply *reply)

@@ -60,6 +60,9 @@ public:
     QNetworkAccessManager *networkAccessManager() const;
 
 protected:
+    void sendRequest(const QNetworkRequest &request,
+                     const QByteArray &verb,
+                     const QByteArray &data);
     void postRequest(const QNetworkRequest &request,
                      const QByteArray &data);
 
