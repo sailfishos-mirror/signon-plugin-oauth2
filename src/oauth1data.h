@@ -45,6 +45,12 @@ namespace OAuth2PluginNS {
         SIGNON_SESSION_DECLARE_PROPERTY(QString, RequestEndpoint);
 
         /*!
+         * HTTP method to be used when talking to the Request token endpoint
+         * (if unspecified, POST will be used)
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, RequestMethod);
+
+        /*!
          * Access token endpoint of the server
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, TokenEndpoint);

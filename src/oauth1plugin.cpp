@@ -662,25 +662,39 @@ void OAuth1Plugin::sendOAuth1PostRequest()
 
     TRACE();
 
+    QByteArray verb = "POST";
     QNetworkRequest request;
     request.setRawHeader(CONTENT_TYPE, CONTENT_APP_URLENCODED);
     QByteArray authHeader;
     if (d->m_oauth1RequestType == OAUTH1_POST_REQUEST_TOKEN) {
-        request.setUrl(d->m_oauth1Data.RequestEndpoint());
-        authHeader = createOAuth1Header(d->m_oauth1Data.RequestEndpoint(),
-                                        d->m_oauth1Data);
+        QString baseUrl(d->m_oauth1Data.RequestEndpoint());
+        QString requestMethod = d->m_oauth1Data.RequestMethod();
+        if (!requestMethod.isEmpty()) {
+            verb = requestMethod.toUtf8();
+        }
+
+        if (verb == "GET") {
+            QUrlQuery query = createQuery(baseUrl, verb, d->m_oauth1Data);
+            QUrl url(baseUrl);
+            url.setQuery(query);
+            request.setUrl(url);
+        } else {
+            authHeader = createOAuth1Header(baseUrl, d->m_oauth1Data);
+            request.setUrl(baseUrl);
+            request.setRawHeader(QByteArray("Authorization"), authHeader);
+        }
     }
     else if (d->m_oauth1RequestType == OAUTH1_POST_ACCESS_TOKEN) {
         request.setUrl(d->m_oauth1Data.TokenEndpoint());
         authHeader = createOAuth1Header(d->m_oauth1Data.TokenEndpoint(),
                                         d->m_oauth1Data);
+        request.setRawHeader(QByteArray("Authorization"), authHeader);
     }
     else {
         Q_ASSERT_X(false, __FUNCTION__, "Invalid OAuth1 POST request");
     }
-    request.setRawHeader(QByteArray("Authorization"), authHeader);
 
-    postRequest(request, QByteArray());
+    sendRequest(request, verb, QByteArray());
 }
 
 const QMap<QString, QString> OAuth1Plugin::parseTextReply(const QByteArray &reply)
