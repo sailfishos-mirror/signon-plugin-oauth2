@@ -131,9 +131,9 @@ QUrl OAuth2Plugin::getAuthUrl()
 {
     Q_D(OAuth2Plugin);
 
-    QString host = d->m_oauth2Data.Host();
+    QString host = d->m_oauth2Data.AuthHost();
     if (host.isEmpty())
-        host = d->m_oauth2Data.AuthHost();
+        host = d->m_oauth2Data.Host();
 
     if (host.isEmpty())
         return QUrl();
@@ -154,9 +154,9 @@ QUrl OAuth2Plugin::getTokenUrl()
 {
     Q_D(OAuth2Plugin);
 
-    QString host = d->m_oauth2Data.Host();
+    QString host = d->m_oauth2Data.TokenHost();
     if (host.isEmpty())
-        host = d->m_oauth2Data.TokenHost();
+        host = d->m_oauth2Data.Host();
 
     if (host.isEmpty())
         return QUrl();
