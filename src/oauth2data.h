@@ -134,6 +134,10 @@ namespace OAuth2PluginNS {
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, AccessToken);
         /*!
+         * OpenID token received from the server
+         */
+        SIGNON_SESSION_DECLARE_PROPERTY(QString, IdToken);
+        /*!
          * Refresh token received from the server
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, RefreshToken);

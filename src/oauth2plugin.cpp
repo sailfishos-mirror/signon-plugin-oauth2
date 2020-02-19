@@ -57,6 +57,7 @@ const QString PASSWORD = QString("password");
 const QString ASSERTION_TYPE = QString("assertion_type");
 const QString ASSERTION = QString("assertion");
 const QString ACCESS_TOKEN = QString("access_token");
+const QString ID_TOKEN = QString("id_token");
 const QString EXPIRES_IN = QString("expires_in");
 const QString SCOPE = QString("scope");
 const QString TIMESTAMP = QString("timestamp");
@@ -255,6 +256,9 @@ bool OAuth2Plugin::respondWithStoredToken(const QVariantMap &token,
     if (token.contains(TOKEN)) {
         OAuth2PluginTokenData response;
         response.setAccessToken(token.value(TOKEN).toByteArray());
+        if (token.contains(ID_TOKEN)) {
+            response.setIdToken(token.value(ID_TOKEN).toByteArray());
+        }
         if (token.contains(REFRESH_TOKEN)) {
             response.setRefreshToken(token.value(REFRESH_TOKEN).toByteArray());
         }
@@ -340,6 +344,7 @@ void OAuth2Plugin::process(const SignOn::SessionData &inData,
             TRACE() << "Storing provided tokens";
             OAuth2PluginTokenData storeTokens;
             storeTokens.setAccessToken(providedTokens.AccessToken());
+            storeTokens.setIdToken(providedTokens.IdToken());
             storeTokens.setRefreshToken(providedTokens.RefreshToken());
             storeTokens.setExpiresIn(providedTokens.ExpiresIn());
             storeResponse(storeTokens);
@@ -411,6 +416,8 @@ void OAuth2Plugin::userActionFinished(const SignOn::UiSessionData &data)
             Q_FOREACH(const StringPair &pair, fragment.queryItems()) {
                 if (pair.first == ACCESS_TOKEN) {
                     respData.setAccessToken(pair.second);
+                } else if (pair.first == ID_TOKEN) {
+                    respData.setIdToken(pair.second);
                 } else if (pair.first == EXPIRES_IN) {
                     respData.setExpiresIn(pair.second.toInt());
                 } else if (pair.first == REFRESH_TOKEN) {
@@ -562,6 +569,7 @@ void OAuth2Plugin::serverReply(QNetworkReply *reply)
             return;
         }
         QByteArray accessToken = map.take("access_token").toByteArray();
+        QByteArray idToken = map.take("id_token").toByteArray();
         int expiresIn = map.take("expires_in").toInt();
         if (expiresIn == 0) {
             // Facebook uses just "expires" as key
@@ -584,6 +592,7 @@ void OAuth2Plugin::serverReply(QNetworkReply *reply)
         } else {
             OAuth2PluginTokenData response;
             response.setAccessToken(accessToken);
+            response.setIdToken(idToken);
             response.setRefreshToken(refreshToken);
             response.setExpiresIn(expiresIn);
             response.setScope(scope);
@@ -724,6 +733,9 @@ void OAuth2Plugin::storeResponse(const OAuth2PluginTokenData &response)
     OAuth2TokenData tokens;
     QVariantMap token;
     token.insert(TOKEN, response.AccessToken());
+    if (response.IdToken().length() > 0) {
+        token.insert(ID_TOKEN, response.IdToken());
+    }
     /* Do not overwrite the refresh token with an empty one: when using the
      * refresh token to obtain a new access token, the replie could not contain
      * a refresh token (or contain an empty one).
