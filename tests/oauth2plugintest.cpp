@@ -856,6 +856,27 @@ void OAuth2PluginTest::testPluginUseragentUserActionFinished()
     QCOMPARE(storedClientData["Scopes"].toStringList(), scopes);
     store.clear();
 
+    //valid data with openid token, and refresh token
+    info.setUrlResponse(QString("http://www.facebook.com/connect/login_success.html#access_token=testtoken.&id_token=idtesttoken&refresh_token=testrefreshtoken&expires_in=4776&state=%1").
+                        arg(state));
+    m_testPlugin->userActionFinished(info);
+    QTRY_COMPARE(resultSpy.count(), 1);
+    response = resultSpy.at(0).at(0).value<SessionData>();
+    result = response.data<OAuth2PluginTokenData>();
+    QCOMPARE(result.AccessToken(), QString("testtoken."));
+    QCOMPARE(result.IdToken(), QString("idtesttoken"));
+    QCOMPARE(result.RefreshToken(), QString("testrefreshtoken"));
+    QCOMPARE(result.ExpiresIn(), 4776);
+    QCOMPARE(result.Scope(), QStringList() << "scope1" << "scope2");
+    resultSpy.clear();
+    QTRY_COMPARE(store.count(), 1);
+    storedData = store.at(0).at(0).value<SessionData>();
+    storedTokenData = storedData.data<OAuth2TokenData>().Tokens();
+    storedClientData = storedTokenData.value(data.ClientId()).toMap();
+    QVERIFY(!storedClientData.isEmpty());
+    QCOMPARE(storedClientData["Scopes"].toStringList(), scopes);
+    store.clear();
+
     //valid data, got scopes
     info.setUrlResponse(QString("http://www.facebook.com/connect/login_success.html#access_token=testtoken.&expires_in=4776&state=%1&scope=scope2").
                         arg(state));
