@@ -134,7 +134,7 @@ namespace OAuth2PluginNS {
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, AccessToken);
         /*!
-         * OpenID token received from the server
+         * OpenID token received from the server (optional)
          */
         SIGNON_SESSION_DECLARE_PROPERTY(QString, IdToken);
         /*!
