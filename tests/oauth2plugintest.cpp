@@ -364,6 +364,17 @@ void OAuth2PluginTest::testPluginProcess_data()
         -1 <<
         false << response << QVariantMap();
 
+    token.insert("id_token", QLatin1String("idtokenfromtest"));
+    tokens.insert(webServerData.ClientId(), QVariant::fromValue(token));
+    webServerData.m_data.insert(QLatin1String("Tokens"), tokens);
+    response.insert("IdToken", QLatin1String("idtokenfromtest"));
+
+    QTest::newRow("stored response including id token, sufficient cached scopes") <<
+        "web_server" <<
+        webServerData.toMap() <<
+        -1 <<
+        false << response << QVariantMap();
+
     webServerData.setForceTokenRefresh(true);
     QTest::newRow("force token refresh, without refresh token") <<
         "web_server" <<
@@ -397,6 +408,18 @@ void OAuth2PluginTest::testPluginProcess_data()
     QVariantMap stored;
     stored.insert("Tokens", storedTokens);
     QTest::newRow("provided tokens") <<
+        "web_server" <<
+        providedTokensWebServerData.toMap() <<
+        -1 <<
+        false << providedTokens << stored;
+
+    /* try providing tokens to be stored and include an openid token */
+    providedTokens.insert("IdToken", "providedidtokenfromtest");
+    providedTokensWebServerData.m_data.insert("ProvidedTokens", providedTokens);
+    storedTokensForKey.insert("id_token", providedTokens.value("IdToken"));
+    storedTokens.insert(providedTokensWebServerData.ClientId(), storedTokensForKey);
+    stored.insert("Tokens", storedTokens);
+    QTest::newRow("provided tokens with openid token") <<
         "web_server" <<
         providedTokensWebServerData.toMap() <<
         -1 <<
