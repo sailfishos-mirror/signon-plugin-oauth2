@@ -1050,6 +1050,25 @@ void OAuth2PluginTest::testPluginWebserverUserActionFinished_data()
         "\"scope\": \"one two\" }" <<
         response;
 
+    response.clear();
+    response.insert("AccessToken", "t0k3n");
+    response.insert("IdToken", "t0k3n2");
+    response.insert("ExpiresIn", int(3600));
+    response.insert("RefreshToken", QString());
+    response.insert("Scope", QStringList() << "one" << "two");
+    response.insert("ExtraFields", QVariantMap());
+    QTest::newRow("reply code, valid token, openid token, other scope") <<
+        "http://localhost/resp.html?code=c0d3&$state" <<
+        int(-1) <<
+        "https://localhost/access_token" <<
+        "grant_type=authorization_code&code=c0d3&redirect_uri=http://localhost/resp.html" <<
+        false <<
+        int(200) <<
+        "application/json" <<
+        "{ \"access_token\":\"t0k3n\", \"id_token\":\"t0k3n2\", \"expires_in\": 3600, "
+        "\"scope\": \"one two\" }" <<
+        response;
+
     response = {
         { "AccessToken", "t0k3n" },
         { "ExpiresIn", int(3600) },
@@ -1070,6 +1089,30 @@ void OAuth2PluginTest::testPluginWebserverUserActionFinished_data()
         int(200) <<
         "application/json" <<
         "{ \"access_token\":\"t0k3n\", \"expires_in\": 3600, "
+        "\"scope\": \"one\", \"userId\": \"345\", \"verified\": true }" <<
+        response;
+
+    response = {
+        { "AccessToken", "t0k3n" },
+        { "IdToken", "t0k3n2" },
+        { "ExpiresIn", int(3600) },
+        { "RefreshToken", QString() },
+        { "Scope", QStringList { "one" } },
+        { "ExtraFields", QVariantMap {
+                { "userId", "345" },
+                { "verified", true },
+            }
+        },
+    };
+    QTest::newRow("reply code, valid token, openid token, extra data") <<
+        "http://localhost/resp.html?code=c0d3&$state" <<
+        int(-1) <<
+        "https://localhost/access_token" <<
+        "grant_type=authorization_code&code=c0d3&redirect_uri=http://localhost/resp.html" <<
+        false <<
+        int(200) <<
+        "application/json" <<
+        "{ \"access_token\":\"t0k3n\", \"id_token\":\"t0k3n2\", \"expires_in\": 3600, "
         "\"scope\": \"one\", \"userId\": \"345\", \"verified\": true }" <<
         response;
 
