@@ -344,7 +344,9 @@ void OAuth2Plugin::process(const SignOn::SessionData &inData,
             TRACE() << "Storing provided tokens";
             OAuth2PluginTokenData storeTokens;
             storeTokens.setAccessToken(providedTokens.AccessToken());
-            storeTokens.setIdToken(providedTokens.IdToken());
+            if (!providedTokens.IdToken().isEmpty()) {
+                storeTokens.setIdToken(providedTokens.IdToken());
+            }
             storeTokens.setRefreshToken(providedTokens.RefreshToken());
             storeTokens.setExpiresIn(providedTokens.ExpiresIn());
             storeResponse(storeTokens);
@@ -592,7 +594,9 @@ void OAuth2Plugin::serverReply(QNetworkReply *reply)
         } else {
             OAuth2PluginTokenData response;
             response.setAccessToken(accessToken);
-            response.setIdToken(idToken);
+            if (idToken.length() > 0) {
+                response.setIdToken(idToken);
+            }
             response.setRefreshToken(refreshToken);
             response.setExpiresIn(expiresIn);
             response.setScope(scope);
