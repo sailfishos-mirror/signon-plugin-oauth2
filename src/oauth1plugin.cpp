@@ -198,7 +198,7 @@ bool OAuth1Plugin::respondWithStoredToken(const QVariantMap &token,
         timeToExpiry =
             token.value(EXPIRY).toUInt() +
             token.value(TIMESTAMP).toUInt() -
-            QDateTime::currentDateTime().toTime_t();
+            QDateTime::currentDateTime().toSecsSinceEpoch();
         if (timeToExpiry < 0) {
             TRACE() << "Stored token is expired";
             return false;
@@ -444,7 +444,8 @@ QString OAuth1Plugin::createOAuth1Header(const QString &aUrl,
                       .arg(urlEncode(oauthNonce)));
     authHeader.append(DELIMITER);
     // Timestamp
-    QString oauthTimestamp = QString("%1").arg(QDateTime::currentDateTime().toTime_t());
+    QString oauthTimestamp =
+        QString("%1").arg(QDateTime::currentDateTime().toSecsSinceEpoch());
     authHeader.append(EQUAL_WITH_QUOTES.arg(OAUTH_TIMESTAMP)
                       .arg(urlEncode(oauthTimestamp)));
     authHeader.append(DELIMITER);

@@ -320,7 +320,7 @@ void OAuth2PluginTest::testPluginProcess_data()
     QVariantMap token;
     token.insert("Token", QLatin1String("tokenfromtest"));
     token.insert("Token2", QLatin1String("token2fromtest"));
-    token.insert("timestamp", QDateTime::currentDateTime().toTime_t());
+    token.insert("timestamp", QDateTime::currentDateTime().toSecsSinceEpoch());
     token.insert("Expiry", 10000);
     tokens.insert(QLatin1String("invalidid"), QVariant::fromValue(token));
     webServerData.m_data.insert(QLatin1String("Tokens"), tokens);
@@ -545,7 +545,7 @@ void OAuth2PluginTest::testPluginHmacSha1Process_data()
     QVariantMap token;
     token.insert("oauth_token", QLatin1String("hmactokenfromtest"));
     token.insert("oauth_token_secret", QLatin1String("hmacsecretfromtest"));
-    token.insert("timestamp", QDateTime::currentDateTime().toTime_t());
+    token.insert("timestamp", QDateTime::currentDateTime().toSecsSinceEpoch());
     token.insert("Expiry", (uint)50000);
     tokens.insert(QLatin1String("invalidid"), QVariant::fromValue(token));
     hmacSha1Data.m_data.insert(QLatin1String("Tokens"), tokens);
@@ -591,7 +591,8 @@ void OAuth2PluginTest::testPluginHmacSha1Process_data()
         true << QVariantMap() << QVariantMap();
     hmacSha1Data.setForceTokenRefresh(false);
 
-    token.insert("timestamp", QDateTime::currentDateTime().toTime_t() - 50000);
+    token.insert("timestamp",
+                 QDateTime::currentDateTime().toSecsSinceEpoch() - 50000);
     token.insert("Expiry", (uint)100);
     tokens.insert(hmacSha1Data.ConsumerKey(), QVariant::fromValue(token));
     hmacSha1Data.m_data.insert(QLatin1String("Tokens"), tokens);
@@ -1650,7 +1651,8 @@ void OAuth2PluginTest::testRefreshToken_data()
     QVariantMap tokens;
     QVariantMap token;
     token.insert("Token", QLatin1String("tokenfromtest"));
-    token.insert("timestamp", QDateTime::currentDateTime().toTime_t() - 10000);
+    token.insert("timestamp",
+                 QDateTime::currentDateTime().toSecsSinceEpoch() - 10000);
     token.insert("Expiry", 1000);
     token.insert("refresh_token", QString("r3fr3sh"));
     tokens.insert(data.ClientId(), QVariant::fromValue(token));
@@ -1665,7 +1667,7 @@ void OAuth2PluginTest::testRefreshToken_data()
 
     QTest::newRow("expired access token") << data.toMap() << response;
 
-    token.insert("timestamp", QDateTime::currentDateTime().toTime_t());
+    token.insert("timestamp", QDateTime::currentDateTime().toSecsSinceEpoch());
     token.insert("Expiry", 50000);
     token.insert("ExtraFields", QVariantMap());
     tokens.insert(data.ClientId(), QVariant::fromValue(token));
@@ -1755,7 +1757,8 @@ void OAuth2PluginTest::testRefreshTokenError()
     QVariantMap tokens;
     QVariantMap token;
     token.insert("Token", QLatin1String("tokenfromtest"));
-    token.insert("timestamp", QDateTime::currentDateTime().toTime_t() - 10000);
+    token.insert("timestamp",
+                 QDateTime::currentDateTime().toSecsSinceEpoch() - 10000);
     token.insert("Expiry", 1000);
     token.insert("refresh_token", QString("r3fr3sh"));
     tokens.insert(data.ClientId(), QVariant::fromValue(token));

@@ -239,7 +239,7 @@ bool OAuth2Plugin::respondWithStoredToken(const QVariantMap &token,
         timeToExpiry =
             token.value(EXPIRY).toUInt() +
             token.value(TIMESTAMP).toUInt() -
-            QDateTime::currentDateTime().toTime_t();
+            QDateTime::currentDateTime().toSecsSinceEpoch();
         if (timeToExpiry < 0) {
             TRACE() << "Stored token is expired";
             return false;
@@ -762,7 +762,7 @@ void OAuth2Plugin::storeResponse(const OAuth2PluginTokenData &response)
     if (response.ExpiresIn() > 0) {
         token.insert(EXPIRY, response.ExpiresIn());
     }
-    token.insert(TIMESTAMP, QDateTime::currentDateTime().toTime_t());
+    token.insert(TIMESTAMP, QDateTime::currentDateTime().toSecsSinceEpoch());
     token.insert(SCOPES, d->m_oauth2Data.Scope());
     token.insert(EXTRA_FIELDS, response.ExtraFields());
     d->m_tokens.insert(d->m_key, QVariant::fromValue(token));
