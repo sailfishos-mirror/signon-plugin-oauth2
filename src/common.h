@@ -33,6 +33,4 @@
 #define TRACE() if (0) qDebug()
 #endif
 
-#define QT_DISABLE_DEPRECATED_BEFORE QT_VERSION_CHECK(4, 0, 0)
-
 #endif // SIGNON_PLUGIN_OAUTH2_COMMON

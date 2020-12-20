@@ -25,7 +25,10 @@ unix:QMAKE_CXXFLAGS += -Werror
 TOP_SRC_DIR     = $$PWD
 
 #DEFINES += QT_NO_DEBUG_OUTPUT
-DEFINES += SIGNON_TRACE
+DEFINES += \
+    SIGNON_TRACE \
+    QT_DISABLE_DEPRECATED_BEFORE=0x050900 \
+    QT_NO_DEPRECATED_WARNINGS
 
 #-----------------------------------------------------------------------------
 # setup the installation prefix
