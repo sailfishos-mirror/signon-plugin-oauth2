@@ -27,6 +27,7 @@
 #include "oauth2tokendata.h"
 
 #include <QUrl>
+#include <QUrlQuery>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QDateTime>
@@ -146,12 +147,14 @@ void OAuth1Plugin::sendOAuth1AuthRequest()
     Q_D(OAuth1Plugin);
 
     QUrl url(d->m_oauth1Data.AuthorizationEndpoint());
-    url.addQueryItem(OAUTH_TOKEN, d->m_oauth1Token);
+    QUrlQuery query(url);
+    query.addQueryItem(OAUTH_TOKEN, d->m_oauth1Token);
     if (!d->m_oauth1ScreenName.isEmpty()) {
         // Prefill username for Twitter
-        url.addQueryItem(SCREEN_NAME, d->m_oauth1ScreenName);
-        url.addQueryItem(FORCE_LOGIN, d->m_oauth1ScreenName);
+        query.addQueryItem(SCREEN_NAME, d->m_oauth1ScreenName);
+        query.addQueryItem(FORCE_LOGIN, d->m_oauth1ScreenName);
     }
+    url.setQuery(query);
     TRACE() << "URL = " << url.toString();
     SignOn::UiSessionData uiSession;
     uiSession.setOpenUrl(url.toString());
@@ -365,9 +368,10 @@ QByteArray OAuth1Plugin::constructSignatureBaseString(const QString &aUrl,
 
     QMap<QString, QString> oAuthHeaderMap;
     QUrl fullUrl(aUrl);
+    QUrlQuery query(fullUrl);
 
     // Constructing the base string as per RFC 5849. Sec 3.4.1
-    QList<QPair<QString, QString> > queryItems = fullUrl.queryItems();
+    QList<QPair<QString, QString> > queryItems = query.queryItems();
     QPair<QString, QString> queryItem;
     foreach (queryItem, queryItems) {
         oAuthHeaderMap[queryItem.first] = queryItem.second;
@@ -500,21 +504,21 @@ void OAuth1Plugin::userActionFinished(const SignOn::UiSessionData &data)
     TRACE() << data.UrlResponse();
 
     // Checking if authorization server granted access
-    QUrl url = QUrl(data.UrlResponse());
-    if (url.hasQueryItem(AUTH_ERROR)) {
+    QUrlQuery query(QUrl(data.UrlResponse()));
+    if (query.hasQueryItem(AUTH_ERROR)) {
         TRACE() << "Server denied access permission";
-        emit error(Error(Error::NotAuthorized, url.queryItemValue(AUTH_ERROR)));
+        emit error(Error(Error::NotAuthorized, query.queryItemValue(AUTH_ERROR)));
         return;
     }
 
-    if (url.hasQueryItem(OAUTH_VERIFIER)) {
-        d->m_oauth1TokenVerifier = url.queryItemValue(OAUTH_VERIFIER);
+    if (query.hasQueryItem(OAUTH_VERIFIER)) {
+        d->m_oauth1TokenVerifier = query.queryItemValue(OAUTH_VERIFIER);
         d->m_oauth1Data.setCallback(QString());
         d->m_oauth1RequestType = OAUTH1_POST_ACCESS_TOKEN;
         sendOAuth1PostRequest();
     }
-    else if (url.hasQueryItem(OAUTH_PROBLEM)) {
-        handleOAuth1ProblemError(url.queryItemValue(OAUTH_PROBLEM));
+    else if (query.hasQueryItem(OAUTH_PROBLEM)) {
+        handleOAuth1ProblemError(query.queryItemValue(OAUTH_PROBLEM));
     }
     else {
         emit error(Error(Error::NotAuthorized, QString("oauth_verifier missing")));

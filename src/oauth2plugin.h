@@ -33,6 +33,8 @@
 #include "base-plugin.h"
 #include "oauth2data.h"
 
+class QUrlQuery;
+
 namespace OAuth2PluginNS {
 
 namespace GrantType {
@@ -74,7 +76,7 @@ private:
     bool respondWithStoredToken(const QVariantMap &token,
                                 const QStringList &scopes);
     void refreshOAuth2Token(const QString &refreshToken);
-    void sendOAuth2PostRequest(QUrl &postData,
+    void sendOAuth2PostRequest(QUrlQuery &postData,
                                GrantType::e grantType);
     void storeResponse(const OAuth2PluginTokenData &response);
     QVariantMap parseReply(const QByteArray &contentType,
