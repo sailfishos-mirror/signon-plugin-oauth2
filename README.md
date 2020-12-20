@@ -14,7 +14,8 @@ See COPYING file.
 Build instructions
 ------------------
 
-This project depends on Qt 5 and [signond](https://gitlab.com/accounts-sso/signond). To build it, just run
+This project depends on Qt 5.8 (or newer) and
+[signond](https://gitlab.com/accounts-sso/signond). To build it, just run
 ```
   qmake
   make
