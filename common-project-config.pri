@@ -19,8 +19,6 @@ UI_SOURCES_DIR  = ui/src
 
 QMAKE_CXXFLAGS += -fno-exceptions \
     -fno-rtti
-# we don't like warnings...
-unix:QMAKE_CXXFLAGS += -Werror
 
 TOP_SRC_DIR     = $$PWD
 
