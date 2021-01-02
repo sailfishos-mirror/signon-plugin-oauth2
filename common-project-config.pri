@@ -25,8 +25,7 @@ TOP_SRC_DIR     = $$PWD
 #DEFINES += QT_NO_DEBUG_OUTPUT
 DEFINES += \
     SIGNON_TRACE \
-    QT_DISABLE_DEPRECATED_BEFORE=0x050900 \
-    QT_NO_DEPRECATED_WARNINGS
+    QT_DISABLE_DEPRECATED_BEFORE=0x050900
 
 #-----------------------------------------------------------------------------
 # setup the installation prefix
